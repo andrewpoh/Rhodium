@@ -1,4 +1,4 @@
-Rhesus
+Rhodium
 ======
 
 Statistical functions in Haskell
