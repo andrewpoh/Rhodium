@@ -3,6 +3,7 @@ module Dataframe
 
 import qualified Data.Map as M
 import Data.Array
+import DataCell
 
 type Name = String
 
@@ -17,9 +18,9 @@ data Column =
 	| DoubleC (Array Int Double)
 
 instance Show Column where
-	show (IntC array) = show $ elems array
-	show (StringC array) = show $ elems array
-	show (DoubleC array) = show $ elems array
+	show (IntC array) = "ints:" ++ (show $ elems array)
+	show (StringC array) = "strings:" ++ (show $ elems array)
+	show (DoubleC array) = "doubles:" ++ (show $ elems array)
 
 testFrame :: Dataframe
 testFrame = makeFrame [
@@ -32,6 +33,18 @@ columnLength :: Column -> Int
 columnLength (IntC array) = length $ indices array
 columnLength (StringC array) = length $ indices array
 columnLength (DoubleC array) = length $ indices array
+
+cellsToColumn :: [DataCell] -> Maybe Column
+cellsToColumn cells
+	| all isIntCell cells =
+		Just $ IntC (listArray bounds (map fromIntCell cells))
+	| all isDoubleCell cells =
+		Just $ DoubleC (listArray bounds (map fromDoubleCell cells))
+	| all isStringCell cells =
+		Just $ StringC (listArray bounds (map fromStringCell cells))
+	| otherwise = Nothing
+	where
+	bounds = (0,length cells - 1)
 
 makeColumn :: Either [Int] (Either [String] [Double]) -> Column
 makeColumn (Left ints) = IntC (listArray (0,length ints - 1) ints)
@@ -46,6 +59,12 @@ makeFrame rawColumns =
 	let columns = map (\(x,y)->(x,makeColumn y)) rawColumns in
 	let rowCount = minimum $ (map columnLength) $ snd $ unzip columns in
 	Dataframe (M.fromList columns, rowCount)
+
+makeDataframe :: Int -> [(Name, Column)] -> Dataframe
+makeDataframe rowCount columns =
+	if any (\(_, c) -> columnLength c /= rowCount) columns
+		then error "Column length mismatch!"
+		else Dataframe (M.fromList columns, rowCount)
 
 getColumn :: Dataframe -> Name -> Column
 getColumn (Dataframe (columns, _)) columnName =
