@@ -7,6 +7,10 @@ data DataCell =
 	| DoubleCell Double
 	deriving (Eq,Show)
 
+showCell (IntCell x) = show x
+showCell (DoubleCell x) = show x
+showCell (StringCell x) = show x
+
 isIntCell :: DataCell -> Bool
 isIntCell (IntCell _) = True
 isIntCell _ = False
