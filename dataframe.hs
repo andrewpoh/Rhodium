@@ -41,7 +41,8 @@ testFrame = makeFrame [
 
 testCol1 = ("a", makeColumn (Left [1,2,3]))
 
-
+getRowCount :: Dataframe -> Int
+getRowCount (Dataframe (_, r)) = r
 
 makeFrame :: [(Name, Either [Int] (Either [String] [Double]))]
 	-> Dataframe
