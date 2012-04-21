@@ -15,6 +15,11 @@ instance Show DataColumn where
 	show (StringC array) = "strings:" ++ (show $ A.elems array)
 	show (DoubleC array) = "doubles:" ++ (show $ A.elems array)
 
+getCell :: DataColumn -> Int -> DataCell
+getCell (IntC array) ix = IntCell ((A.!) array ix)
+getCell (DoubleC array) ix = DoubleCell ((A.!) array ix)
+getCell (StringC array) ix = StringCell ((A.!) array ix)
+
 columnLength :: DataColumn -> Int
 columnLength (IntC array) = length $ A.indices array
 columnLength (StringC array) = length $ A.indices array
