@@ -15,6 +15,18 @@ instance Show DataColumn where
 	show (StringC array) = "strings:" ++ (show $ A.elems array)
 	show (DoubleC array) = "doubles:" ++ (show $ A.elems array)
 
+fromIntC :: DataColumn -> A.Array Int Int
+fromIntC (IntC array) = array
+fromIntC _ = error "not int column"
+
+fromStringC :: DataColumn -> A.Array Int String
+fromStringC (StringC array) = array
+fromStringC _ = error "not string column"
+
+fromDoubleC :: DataColumn -> A.Array Int Double
+fromDoubleC (DoubleC array) = array
+fromDoubleC _ = error "not double column"
+
 getCell :: DataColumn -> Int -> DataCell
 getCell (IntC array) ix = IntCell ((A.!) array ix)
 getCell (DoubleC array) ix = DoubleCell ((A.!) array ix)
