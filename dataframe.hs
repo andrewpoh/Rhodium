@@ -44,6 +44,9 @@ testCol1 = ("a", makeColumn (Left [1,2,3]))
 getRowCount :: Dataframe -> Int
 getRowCount (Dataframe (_, r)) = r
 
+getIndices :: Dataframe -> [Int]
+getIndices frame = [0..getRowCount frame - 1]
+
 makeFrame :: [(Name, Either [Int] (Either [String] [Double]))]
 	-> Dataframe
 makeFrame rawColumns =
