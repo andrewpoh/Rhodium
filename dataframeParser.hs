@@ -1,13 +1,18 @@
-module Dataframe.Parser
+module DataframeParser
 	where
 
+import Data.Either
 import Data.List
 import Data.Maybe
 import Text.ParserCombinators.Parsec
 import Dataframe
 import DataCell
+import DataColumn
 
--- readTable :: String -> Dataframe
+readTable :: String -> Dataframe
+readTable text =
+	let raw = parse rawTable "" text in
+	either (error . show) processTable raw
 
 egTable :: String
 egTable = "a,b\n-12,0.34\n3, 1.5"
