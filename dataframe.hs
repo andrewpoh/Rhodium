@@ -66,3 +66,12 @@ getColumn (Dataframe (columns, _)) columnName =
 	case mColumn of
 		Nothing -> error ("Column "++columnName++" not found!")
 		Just c -> c
+
+getIntColumn :: Dataframe -> Name -> Array Int Int
+getIntColumn f n = fromIntC $ getColumn f n
+
+getDoubleColumn :: Dataframe ->  Name -> Array Int Double
+getDoubleColumn f n = fromDoubleC $ getColumn f n
+
+getStringColumn :: Dataframe ->  Name -> Array Int String
+getStringColumn f n = fromStringC $ getColumn f n
