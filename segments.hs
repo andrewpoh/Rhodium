@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -XTypeFamilies #-}
 module Segments
 	where
 
@@ -8,45 +9,73 @@ import Dataframe
 import DataColumn
 import DataCell
 
-class MatcherT m where
+class Matcher m where
 	matchOne :: m -> Dataframe -> Int -> Bool
 	matchMany :: m -> Dataframe -> [Int] -> [Bool]
 	matchMany m frame = map (matchOne m frame)
 	matchAll :: m -> Dataframe -> [Bool]
 	matchAll m frame = matchMany m frame (getIndices frame)
 
-instance MatcherT IntSplit where
+instance Matcher IntSplit where
 	matchOne (IntSplit (name, x)) frame index =
 		let cell = getCell (getColumn frame name) index in
 		fromIntCell cell < x
 	matchMany (IntSplit (name, x)) frame indices =
-		let array = fromIntC $ getColumn frame name in
+		let array = getIntColumn frame name in
 		map (\i -> array A.! i < x) indices
 	matchAll (IntSplit (name, x)) frame =
-		let array = fromIntC $ getColumn frame name in
+		let array = getIntColumn frame name in
 		map (<x) (A.elems array)
 
 -- Simple <
 newtype IntSplit = IntSplit (Name, Int)
 	deriving (Eq, Show)
 
+class Aggregator a where
+	type AggPartial a :: *
+	type AggResult a :: *
+	processSingle :: a -> Dataframe -> Int -> AggPartial a
+	processMany :: a -> Dataframe -> [Int] -> AggPartial a
+	mergePartials :: a -> [AggPartial a] -> AggPartial a
+	partialToFinal :: a -> AggPartial a -> AggResult a
+	aggregateMany :: a -> Dataframe -> [Int] -> AggResult a
+	aggregateMany a f ixs = (partialToFinal a (processMany a f ixs))
+
 data Discretiser k =
 	Discretiser (Dataframe -> Int -> k)
 
-data Aggregator a =
-	Aggregator (a, Dataframe -> Int -> a -> a)
+data CountAgg = CountAgg
 
-aggregate :: Ord k=>Discretiser k -> Aggregator a -> Dataframe -> M.Map k a
-aggregate (Discretiser makeKey) (Aggregator (seed, combine)) frame =
-	foldl' adjust M.empty indices
+instance Aggregator CountAgg where
+	type AggPartial CountAgg = Int
+	type AggResult CountAgg = Int
+	processSingle _ _ _ = 1
+	processMany _ _ indices = length indices
+	mergePartials _ = sum
+	partialToFinal _ = id
+
+-- Compose Aggregators in tuples
+
+data MeanAgg = MeanAgg String
+
+instance Aggregator MeanAgg where
+	type AggPartial MeanAgg = (Double, Double)
+	type AggResult MeanAgg = Double
+	processSingle (MeanAgg columnName) frame index = (getDoubleColumn frame columnName A.! index, 1.0)
+	processMany (MeanAgg columnName) frame indices =
+		let column = getDoubleColumn frame columnName in
+		(sum $ map ((A.!) column) indices, fromIntegral $ length indices)
+	mergePartials _ partials = (sum $ map fst partials, sum $ map snd partials)
+	partialToFinal _ (n,d) = n/d
+
+aggregate :: (Ord k, Aggregator g) => Discretiser k -> g -> Dataframe -> M.Map k (AggResult g)
+aggregate (Discretiser makeKey) agg frame =
+	M.map (partialToFinal agg) (foldl' adjust M.empty indices)
 	where
 	indices = [0..(getRowCount frame-1)]
 	adjust store index =
-		M.insertWith' (\_ x -> combine frame index x)
-			(makeKey frame index) seed store
-
-countAgg :: Aggregator Int
-countAgg = Aggregator (1, \_ _ x-> x+1)
+		M.insertWith' (\n o -> mergePartials agg [n, o])
+			(makeKey frame index) (processSingle agg frame index) store
 
 simpleDisc :: String -> Discretiser String
 simpleDisc columnName =
@@ -58,7 +87,7 @@ intDisc columnName =
 
 intSplits :: Dataframe -> Int -> Int -> String -> [IntSplit]
 intSplits frame minSize minStep intColName =
-	let histogram = M.assocs $ aggregate (intDisc intColName) countAgg frame in
+	let histogram = M.assocs $ aggregate (intDisc intColName) CountAgg frame in
 	let totalFrequencies = (sum . map snd) histogram in
 	let initialFreq = snd $ head histogram in
 	let thist = tail histogram in
