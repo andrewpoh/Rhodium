@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -XTypeFamilies #-}
+{-# OPTIONS_GHC -XFlexibleContexts #-}
 module Segments
 	where
 
@@ -10,20 +12,31 @@ import DataColumn
 import DataCell
 import Matchers
 
-data Discretiser k =
-	Discretiser (Dataframe -> Int -> k)
+class Discretiser k where
+	type DiscType k :: *
+	discretiseSingle :: k -> Dataframe -> Int -> DiscType k
+	discretiseMany :: k -> Dataframe -> [Int] -> [DiscType k]
+	discretiseMany k f ixs = map (discretiseSingle k f) ixs
 
-simpleDisc :: String -> Discretiser String
-simpleDisc columnName =
-	Discretiser (\frame index -> showCell $ getCell (getColumn frame columnName) index)
+data ShowDisc = ShowDisc Name
+instance Discretiser ShowDisc where
+	type DiscType ShowDisc = String
+	discretiseSingle (ShowDisc n) f i =
+		let cell = getCell (getColumn f n) i in
+		showCell cell
 
-intDisc :: String -> Discretiser Int
-intDisc columnName = 
-	Discretiser (\frame index -> fromIntCell $ getCell (getColumn frame columnName) index)
+data IntDisc = IntDisc Name
+instance Discretiser IntDisc where
+	type DiscType IntDisc = Int
+	discretiseSingle (IntDisc n) f i =
+		let intColumn = getIntColumn f n in
+		intColumn A.! i
+
+-- Split creators should be unfolds
 
 intSplits :: Dataframe -> Int -> Int -> String -> [IntSplit]
 intSplits frame minSize minStep intColName =
-	let histogram = M.assocs $ aggregate (intDisc intColName) CountAgg frame in
+	let histogram = M.assocs $ aggregate (IntDisc intColName) CountAgg frame in
 	let totalFrequencies = (sum . map snd) histogram in
 	let initialFreq = snd $ head histogram in
 	let thist = tail histogram in
@@ -47,12 +60,13 @@ chooseIntSplit_ minSize minStep totalf columnName
 		then skipElement
 		else keepElement
 
-aggregate :: (Ord k, Aggregator g) => Discretiser k -> g -> Dataframe -> M.Map k (AggResult g)
-aggregate (Discretiser makeKey) agg frame =
+-- This requires Flexible Contexts, which might be too much
+aggregate :: (Ord (DiscType k), Discretiser k, Aggregator g) =>
+	k -> g -> Dataframe -> M.Map (DiscType k) (AggResult g)
+aggregate disc agg frame =
 	M.map (partialToFinal agg) (foldl' adjust M.empty indices)
 	where
 	indices = [0..(getRowCount frame-1)]
 	adjust store index =
 		M.insertWith' (\n o -> mergePartials agg [n, o])
-			(makeKey frame index) (processSingle agg frame index) store
-
+			(discretiseSingle disc frame index) (processSingle agg frame index) store
