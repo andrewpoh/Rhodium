@@ -4,13 +4,32 @@ module Dataframe
 import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Array
-import Text.PrettyPrint as P
+-- Require the Boxes package to print dataframes neatly
+import Text.PrettyPrint.Boxes as P
 import DataCell
 import DataColumn
 
 type Name = String
 
 data Dataframe = Dataframe (M.Map Name DataColumn, Int)
+instance Show Dataframe where
+	show df@(Dataframe (columns, rowCount)) =
+		let summaryBox = boxSummary df in
+		let columnBoxes = ((map boxColumn) . M.assocs) columns in
+		let mergedColumns = P.hsep 1 P.top columnBoxes in
+		P.render (mergedColumns P.// summaryBox)
+
+boxColumn :: (Name, DataColumn) -> P.Box
+boxColumn (n, (IntC array))
+	= P.vcat P.right $ (P.text n):(boxArray (P.text . show) array)
+boxColumn (n, (DoubleC array))
+	= P.vcat P.right $ (P.text n):(boxArray (P.text . show) array)
+boxColumn (n, (StringC array))
+	= P.vcat P.right $ (P.text n):(boxArray P.text array)
+
+boxArray :: Ix ix => (d -> Box) -> Array ix d -> [Box]
+boxArray f = (map f) . elems
+{-
 instance Show Dataframe where
 	show df@(Dataframe (columns, rowCount)) =
 		let summaryText = showSummary df in
@@ -27,9 +46,16 @@ docColumn (n, (StringC array)) = (P.text n):(docArray P.text array)
 docArray :: Ix ix => (d -> Doc) -> Array ix d -> [Doc]
 docArray f = (map f) . elems
 
+
 showSummary :: Dataframe -> String
 showSummary (Dataframe (columns, rowCount)) =
 	'(':(show rowCount)++ " rows, "++(show $ M.size columns)++" columns)"
+-}
+
+boxSummary :: Dataframe -> P.Box
+boxSummary frame =
+	P.text ('(':(show $ getRowCount frame) ++ " rows, "
+		++(show $ getColumnCount frame) ++ " columns)")
 
 testFrame :: Dataframe
 testFrame = makeFrame [
@@ -43,6 +69,9 @@ testCol1 = ("a", makeColumn (Left [1,2,3]))
 
 getRowCount :: Dataframe -> Int
 getRowCount (Dataframe (_, r)) = r
+
+getColumnCount :: Dataframe -> Int
+getColumnCount (Dataframe (cs, _)) = M.size cs
 
 getIndices :: Dataframe -> [Int]
 getIndices frame = [0..getRowCount frame - 1]
