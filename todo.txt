@@ -1,0 +1,16 @@
+To Do:
+
+* Convert split generator into unfold
+* Create double split generator
+* Implement squared deviation metric
+* Test regression tree prediction
+* Test parsing on large dataset
+* Profile regression tree prediction
+* Create regression tree training
+* Profile regression tree training
+* Create random forest algorithm
+* Profile random forest training and prediction
+* Add proximity and importance metrics
+* Remove redundant methods
+* Move test data into separate files
+* Create QuickCheck tests
