@@ -2,7 +2,7 @@
 module Aggregators
 	where
 
-import qualified Data.Array as A
+import qualified Data.Array.Unboxed as A
 import Data.List
 import qualified Data.Map as M
 import Dataframe

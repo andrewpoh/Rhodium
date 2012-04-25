@@ -1,21 +1,21 @@
 module DataColumn
 	where
 
-import qualified Data.Array as A
+import qualified Data.Array.Unboxed as A
 
 import DataCell
 
 data DataColumn =
-	IntC (A.Array Int Int)
+	IntC (A.UArray Int Int)
 	| StringC (A.Array Int String)
-	| DoubleC (A.Array Int Double)
+	| DoubleC (A.UArray Int Double)
 
 instance Show DataColumn where
 	show (IntC array) = "ints:" ++ (show $ A.elems array)
 	show (StringC array) = "strings:" ++ (show $ A.elems array)
 	show (DoubleC array) = "doubles:" ++ (show $ A.elems array)
 
-fromIntC :: DataColumn -> A.Array Int Int
+fromIntC :: DataColumn -> A.UArray Int Int
 fromIntC (IntC array) = array
 fromIntC _ = error "not int column"
 
@@ -23,7 +23,7 @@ fromStringC :: DataColumn -> A.Array Int String
 fromStringC (StringC array) = array
 fromStringC _ = error "not string column"
 
-fromDoubleC :: DataColumn -> A.Array Int Double
+fromDoubleC :: DataColumn -> A.UArray Int Double
 fromDoubleC (DoubleC array) = array
 fromDoubleC _ = error "not double column"
 

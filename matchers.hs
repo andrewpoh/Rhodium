@@ -1,7 +1,7 @@
 module Matchers
 	where
 
-import qualified Data.Array as A
+import qualified Data.Array.Unboxed as A
 import DataCell
 import DataColumn
 import Dataframe

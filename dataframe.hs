@@ -3,7 +3,7 @@ module Dataframe
 
 import qualified Data.List as L
 import qualified Data.Map as M
-import Data.Array
+import Data.Array.Unboxed
 -- Require the Boxes package to print dataframes neatly
 import Text.PrettyPrint.Boxes as P
 import DataCell
@@ -27,7 +27,7 @@ boxColumn (n, (DoubleC array))
 boxColumn (n, (StringC array))
 	= P.vcat P.right $ (P.text n):(boxArray P.text array)
 
-boxArray :: Ix ix => (d -> Box) -> Array ix d -> [Box]
+boxArray :: (IArray a d, Ix ix) => (d -> Box) -> a ix d -> [Box]
 boxArray f = (map f) . elems
 
 boxSummary :: Dataframe -> P.Box
@@ -74,10 +74,10 @@ getColumn (Dataframe (columns, _)) columnName =
 		Nothing -> error ("Column "++columnName++" not found!")
 		Just c -> c
 
-getIntColumn :: Dataframe -> Name -> Array Int Int
+getIntColumn :: Dataframe -> Name -> UArray Int Int
 getIntColumn f n = fromIntC $ getColumn f n
 
-getDoubleColumn :: Dataframe ->  Name -> Array Int Double
+getDoubleColumn :: Dataframe ->  Name -> UArray Int Double
 getDoubleColumn f n = fromDoubleC $ getColumn f n
 
 getStringColumn :: Dataframe ->  Name -> Array Int String
