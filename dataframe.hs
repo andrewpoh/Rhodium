@@ -29,28 +29,6 @@ boxColumn (n, (StringC array))
 
 boxArray :: Ix ix => (d -> Box) -> Array ix d -> [Box]
 boxArray f = (map f) . elems
-{-
-instance Show Dataframe where
-	show df@(Dataframe (columns, rowCount)) =
-		let summaryText = showSummary df in
-		let columnDocs = ((map docColumn) . M.assocs) columns in
-		let mergedColumns = ((map P.sep) . L.transpose) columnDocs in
-		let columnText = (P.render . P.vcat) mergedColumns in
-		summaryText ++ '\n':columnText
-
-docColumn :: (Name, DataColumn) -> [P.Doc]
-docColumn (n, (IntC array)) = (P.text n):(docArray P.int array)
-docColumn (n, (DoubleC array)) = (P.text n):(docArray P.double array)
-docColumn (n, (StringC array)) = (P.text n):(docArray P.text array)
-
-docArray :: Ix ix => (d -> Doc) -> Array ix d -> [Doc]
-docArray f = (map f) . elems
-
-
-showSummary :: Dataframe -> String
-showSummary (Dataframe (columns, rowCount)) =
-	'(':(show rowCount)++ " rows, "++(show $ M.size columns)++" columns)"
--}
 
 boxSummary :: Dataframe -> P.Box
 boxSummary frame =
