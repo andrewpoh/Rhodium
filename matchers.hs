@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -XExistentialQuantification #-}
 module Matchers
 	where
 
@@ -13,6 +14,19 @@ class Matcher m where
 	matchAll :: m -> Dataframe -> [Bool]
 	matchAll m frame = matchMany m frame (getIndices frame)
 
+data AnyMatcher = forall m. (Matcher m, Show m) => AnyMatcher m
+
+instance Show AnyMatcher where
+	show (AnyMatcher m) = show m
+
+instance Matcher AnyMatcher where
+	matchOne (AnyMatcher m) = matchOne m
+	matchMany (AnyMatcher m) = matchMany m
+
+-- Simple <
+newtype IntSplit = IntSplit (Name, Int)
+	deriving (Eq, Show)
+
 instance Matcher IntSplit where
 	matchOne (IntSplit (name, x)) frame index =
 		let cell = getCell (getColumn frame name) index in
@@ -23,10 +37,6 @@ instance Matcher IntSplit where
 	matchAll (IntSplit (name, x)) frame =
 		let array = getIntColumn frame name in
 		map (<x) (A.elems array)
-
--- Simple <
-newtype IntSplit = IntSplit (Name, Int)
-	deriving (Eq, Show)
 
 newtype DoubleSplit = DoubleSplit (Name, Double)
 	deriving (Eq, Show)
