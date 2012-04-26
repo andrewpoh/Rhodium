@@ -1,6 +1,5 @@
 To Do:
 
-* Convert split generator into unfold
 * Create double split generator
 * Implement squared deviation metric
 * Test regression tree prediction
@@ -11,6 +10,8 @@ To Do:
 * Create random forest algorithm
 * Profile random forest training and prediction
 * Add proximity and importance metrics
-* Remove redundant methods
+* Remove redundant (dataframe etc creation) methods
 * Move test data into separate files
 * Create QuickCheck tests
+
+* Maybe convert split generator into unfold
