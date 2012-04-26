@@ -17,33 +17,49 @@ import Matchers
 
 doubleSplits :: Dataframe -> Int -> Int -> String -> [DoubleSplit]
 doubleSplits frame minSize minStep doubleColName =
+	let rowCount = getRowCount frame in
 	let doubleArray = getDoubleColumn frame doubleColName in
-	let sortedArray = ?? in
+	let sorted =
+		(A.listArray (0, rowCount-1) . sort . A.elems) doubleArray in
+	let op = splitDoubles_ doubleColName minSize minStep sorted rowCount in
 	unfoldr op minSize
 
 -- should check for duplicates
 -- totalf should match length of array
-chooseDoubleSplit_ minSize minStep sortedArray totalf index =
+splitDoubles_ :: Name -> Int -> Int -> A.UArray Int Double
+	-> Int -> Int
+	-> Maybe (DoubleSplit, Int)
+splitDoubles_ columnName minSize minStep sortedArray totalf index =
 	let remf = totalf - index in
 	if remf < minSize
 		then Nothing
-		else Just (sortedArray A.! index, index+minStep)
-
+		else
+			let breakpoint = sortedArray A.! index in
+			Just (DoubleSplit (columnName, breakpoint), index+minStep)
+{-
+ - Should implement unfold version
+intSplits2 :: Dataframe -> Int -> Int -> String -> [IntSplit]
+intSplits2 frame minSize minStep intColName =
+	let columnArray = getintColumn frame intColName in
+	let intDisc = IntDisc intColName in
+	let histogram = M.assocs $ aggregate intDisc CountAgg frame in
+	unfoldr 
+-}
 intSplits :: Dataframe -> Int -> Int -> String -> [IntSplit]
 intSplits frame minSize minStep intColName =
 	let histogram = M.assocs $ aggregate (IntDisc intColName) CountAgg frame in
 	let totalFrequencies = (sum . map snd) histogram in
 	let initialFreq = snd $ head histogram in
 	let thist = tail histogram in
-	let op = chooseIntSplit_ minSize minStep (getRowCount frame) intColName in
+	let op = splitInts_ minSize minStep (getRowCount frame) intColName in
 	if length histogram < 2 then []
 		else snd $ foldl op ((initialFreq, initialFreq), []) thist
 
-chooseIntSplit_ ::
+splitInts_ ::
 	Int -> Int -> Int -> String
 	-> ((Int, Int), [IntSplit]) -> (Int, Int)
 	-> ((Int, Int), [IntSplit])
-chooseIntSplit_ minSize minStep totalf columnName
+splitInts_ minSize minStep totalf columnName
 	((cumf, stepf), splits) (key, nextf) =
 	let remf = totalf - cumf in
 	let cumf1 = cumf+nextf in
