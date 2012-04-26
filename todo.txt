@@ -1,6 +1,8 @@
 To Do:
 
 * Create double split generator
+* Add support for weights
+* Adapt algorithms to operate on row subsets
 * Implement squared deviation metric
 * Test regression tree prediction
 * Test parsing on large dataset

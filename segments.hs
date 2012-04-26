@@ -15,6 +15,20 @@ import Matchers
 
 -- Split creators should be unfolds
 
+doubleSplits :: Dataframe -> Int -> Int -> String -> [DoubleSplit]
+doubleSplits frame minSize minStep doubleColName =
+	let doubleArray = getDoubleColumn frame doubleColName in
+	let sortedArray = ?? in
+	unfoldr op minSize
+
+-- should check for duplicates
+-- totalf should match length of array
+chooseDoubleSplit_ minSize minStep sortedArray totalf index =
+	let remf = totalf - index in
+	if remf < minSize
+		then Nothing
+		else Just (sortedArray A.! index, index+minStep)
+
 intSplits :: Dataframe -> Int -> Int -> String -> [IntSplit]
 intSplits frame minSize minStep intColName =
 	let histogram = M.assocs $ aggregate (IntDisc intColName) CountAgg frame in
