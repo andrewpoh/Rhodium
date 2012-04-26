@@ -1,18 +1,24 @@
 module DecisionTree
 	where
 
+import Dataframe
+import Matchers
 import Segments
 
 data DecisionTree a =
-	DtSplit Matcher (DecisionTree a) (DecisionTree a)
+	DtSplit AnyMatcher (DecisionTree a) (DecisionTree a)
 	| DtLeaf a
 
 runTree :: Dataframe -> Int -> DecisionTree a -> a
 runTree _ _ (DtLeaf result) = result
 runTree frame index (DtSplit matcher trueBranch falseBranch) =
-	if matcher frame index
+	if matchOne matcher frame index
 		then runTree frame index trueBranch
 		else runTree frame index falseBranch
+
+squaredDeviation :: [Double] -> [Double] -> Double
+squaredDeviation actual prediction =
+	sum $ zipWith (\x y-> let d = x - y in d * d) actual prediction
 
 -- generate Matchers
 -- calculate improvement
