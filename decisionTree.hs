@@ -3,6 +3,8 @@ module DecisionTree
 
 import qualified Data.Array.Unboxed as A
 import Data.List
+import Data.Maybe
+import Aggregators
 import DataColumn
 import Dataframe
 import Matchers
@@ -11,6 +13,7 @@ import Segments
 data DecisionTree a =
 	DtSplit AnyMatcher (DecisionTree a) (DecisionTree a)
 	| DtLeaf a
+	deriving (Show)
 
 runTree :: Dataframe -> Int -> DecisionTree a -> a
 runTree _ _ (DtLeaf result) = result
@@ -19,11 +22,27 @@ runTree frame index (DtSplit matcher trueBranch falseBranch) =
 		then runTree frame index trueBranch
 		else runTree frame index falseBranch
 
--- Response, minsize, minstep
-data TreeConfig = TreeConfig Name Int Int
+-- minsize, minstep, response, variables
+data TreeConfig = TreeConfig Int Int Name [Name]
+	deriving (Eq, Show)
 
-bestMatcher :: TreeConfig -> Dataframe -> [Int] -> [Name] -> AnyMatcher
-bestMatcher (TreeConfig r minSize minStep) f ixs ns =
+growTree :: TreeConfig -> Dataframe -> [Int] -> DecisionTree Double
+growTree tc@(TreeConfig _ _ r _) f ixs =
+	let bm = bestMatcher tc f ixs in
+	let toNode = makeNode tc f ixs in
+	let leaf = DtLeaf (aggregateMany (MeanAgg r) f ixs) in
+	maybe leaf toNode bm
+
+makeNode :: TreeConfig -> Dataframe -> [Int] -> AnyMatcher
+	-> DecisionTree Double
+makeNode tc frame indices m =
+	let (trues, falses) = partition (matchOne m frame) indices in
+	let tLeft = growTree tc frame trues in
+	let tRight = growTree tc frame falses in
+	DtSplit m tLeft tRight
+
+bestMatcher :: TreeConfig -> Dataframe -> [Int] -> Maybe AnyMatcher
+bestMatcher (TreeConfig minSize minStep r ns) f ixs =
 	let ms = makeMatchers minSize minStep f ixs ns in
 	pickMatcher f r ixs ms
 
@@ -39,11 +58,13 @@ makeMatcher minSize minStep f ixs (n, c) = case columnType c of
 	DblType -> map AnyMatcher (doubleSplits f minSize minStep n ixs)
 	_ -> []
 
-pickMatcher :: Matcher m => Dataframe -> Name -> [Int] -> [m] -> m
+pickMatcher :: Matcher m => Dataframe -> Name -> [Int] -> [m] -> Maybe m
 pickMatcher f r indices ms =
 	let mScores = map (scoreMatcher f r indices) ms in
 	let mAndScore = zip mScores ms in
-	snd $ maximumBy (\x y-> compare (fst x) (fst y)) mAndScore
+	if length mAndScore > 0
+		then Just $ snd $ maximumBy (\x y-> compare (fst x) (fst y)) mAndScore
+		else Nothing
 
 -- larger is better
 scoreMatcher :: Matcher m => Dataframe -> Name -> [Int] -> m -> Double

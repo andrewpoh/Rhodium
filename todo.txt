@@ -1,6 +1,7 @@
 To Do:
 
 * Make squared deviation an aggregation metric
+* Increase sharing of computations and data structures
 * Add support for weights
 * Test regression tree prediction
 * Test parsing on large dataset
