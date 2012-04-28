@@ -19,22 +19,29 @@ runTree frame index (DtSplit matcher trueBranch falseBranch) =
 		then runTree frame index trueBranch
 		else runTree frame index falseBranch
 
-{-
-makeMatchers :: Dataframe -> [Int] -> [Name] -> AnyMatcher
-makeMatchers f ixs ns =
-	let cs = columnList f in
-	let
--}
+-- Response, minsize, minstep
+data TreeConfig = TreeConfig Name Int Int
 
-makeMatcher :: Dataframe -> [Int] -> (Name, DataColumn) -> [AnyMatcher]
-makeMatcher f ixs (n, c) = case columnType c of
-	IntType -> map AnyMatcher (intSplits f 1 1 n ixs)
-	DblType -> map AnyMatcher (doubleSplits f 1 1 n ixs)
+bestMatcher :: TreeConfig -> Dataframe -> [Int] -> [Name] -> AnyMatcher
+bestMatcher (TreeConfig r minSize minStep) f ixs ns =
+	let ms = makeMatchers minSize minStep f ixs ns in
+	pickMatcher f r ixs ms
+
+makeMatchers :: Int -> Int -> Dataframe -> [Int] -> [Name] -> [AnyMatcher]
+makeMatchers minSize minStep f ixs ns =
+	let cs = map (\n -> (n, getColumn f n)) ns in
+	concatMap (makeMatcher minSize minStep f ixs) cs
+
+makeMatcher :: Int -> Int -> Dataframe -> [Int]
+	-> (Name, DataColumn) -> [AnyMatcher]
+makeMatcher minSize minStep f ixs (n, c) = case columnType c of
+	IntType -> map AnyMatcher (intSplits f minSize minStep n ixs)
+	DblType -> map AnyMatcher (doubleSplits f minSize minStep n ixs)
 	_ -> []
 
 pickMatcher :: Matcher m => Dataframe -> Name -> [Int] -> [m] -> m
 pickMatcher f r indices ms =
-	let mScores = map (scoreSplitter f r indices) ms in
+	let mScores = map (scoreMatcher f r indices) ms in
 	let mAndScore = zip mScores ms in
 	snd $ maximumBy (\x y-> compare (fst x) (fst y)) mAndScore
 
