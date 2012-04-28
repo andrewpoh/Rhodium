@@ -1,9 +1,7 @@
 To Do:
 
-* Create double split generator
+* Make squared deviation an aggregation metric
 * Add support for weights
-* Adapt algorithms to operate on row subsets
-* Implement squared deviation metric
 * Test regression tree prediction
 * Test parsing on large dataset
 * Profile regression tree prediction
@@ -17,3 +15,8 @@ To Do:
 * Create QuickCheck tests
 
 * Maybe convert split generator into unfold
+
+Done:
+* Create double split generator
+* Adapt algorithms to operate on row subsets
+* Implement squared deviation metric
