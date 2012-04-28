@@ -1,5 +1,6 @@
 To Do:
 
+* Move test data into separate files
 * Make squared deviation an aggregation metric
 * Increase sharing of computations and data structures
 * Add support for weights
@@ -12,7 +13,6 @@ To Do:
 * Profile random forest training and prediction
 * Add proximity and importance metrics
 * Remove redundant (dataframe etc creation) methods
-* Move test data into separate files
 * Create QuickCheck tests
 
 * Maybe convert split generator into unfold

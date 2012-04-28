@@ -42,6 +42,13 @@ testFrame = makeFrame [
 	("double", Right $ Right [2.0, 4.0, 6.0, 8.0, 10.0])
 	]
 
+bigFrame :: Dataframe
+bigFrame = makeFrame [
+	("r", Right $ Right [2.0, 4.0, 6.0, 8.0, 10.0, 3.0, 1.0, 9.0, 5.0, 7.0]),
+	("i1", Left [1,2,3,4,5,2,3,3,4,5]),
+	("i2", Left [3,2,4,4,3,2,2,3,4,2]),
+	("d1", Right $ Right [3.5, 2.5, 4.0, 6.7, 5.2, 6.1, 4.5, 3.2, 4.2, 5.5])
+	]
 
 testCol1 = ("a", makeColumn (Left [1,2,3]))
 
