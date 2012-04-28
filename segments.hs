@@ -15,12 +15,12 @@ import Matchers
 
 -- Split creators should be unfolds
 
-doubleSplits :: Dataframe -> Int -> Int -> String -> [DoubleSplit]
-doubleSplits frame minSize minStep doubleColName =
-	let rowCount = getRowCount frame in
+doubleSplits :: Dataframe -> Int -> Int -> String -> [Int] -> [DoubleSplit]
+doubleSplits frame minSize minStep doubleColName indices =
+	let rowCount = length indices in
 	let doubleArray = getDoubleColumn frame doubleColName in
-	let sorted =
-		(A.listArray (0, rowCount-1) . sort . A.elems) doubleArray in
+	let elements = map ((A.!) doubleArray) indices in
+	let sorted = (A.listArray (0, rowCount-1) . sort) elements in
 	let op = splitDoubles_ doubleColName minSize minStep sorted rowCount in
 	unfoldr op minSize
 
@@ -45,14 +45,15 @@ intSplits2 frame minSize minStep intColName =
 	let histogram = M.assocs $ aggregate intDisc CountAgg frame in
 	unfoldr 
 -}
-intSplits :: Dataframe -> Int -> Int -> String -> [IntSplit]
-intSplits frame minSize minStep intColName =
-	let histogram = M.assocs $ aggregate (IntDisc intColName) CountAgg frame in
-	let totalFrequencies = (sum . map snd) histogram in
-	let initialFreq = snd $ head histogram in
-	let thist = tail histogram in
-	let op = splitInts_ minSize minStep (getRowCount frame) intColName in
-	if length histogram < 2 then []
+intSplits :: Dataframe -> Int -> Int -> String -> [Int] -> [IntSplit]
+intSplits frame minSize minStep intColName indices =
+	let histogram = aggregate (IntDisc intColName) CountAgg frame indices in
+	let histogramList = M.assocs $ histogram in
+	let totalFrequencies = (sum . map snd) histogramList in
+	let initialFreq = snd $ head histogramList in
+	let thist = tail histogramList in
+	let op = splitInts_ minSize minStep (length indices) intColName in
+	if length histogramList < 2 then []
 		else snd $ foldl op ((initialFreq, initialFreq), []) thist
 
 splitInts_ ::
@@ -73,11 +74,12 @@ splitInts_ minSize minStep totalf columnName
 
 -- This requires Flexible Contexts, which might be too much
 aggregate :: (Ord (DiscType k), Discretiser k, Aggregator g) =>
-	k -> g -> Dataframe -> M.Map (DiscType k) (AggResult g)
-aggregate disc agg frame =
+	k -> g -> Dataframe -> [Int] -> M.Map (DiscType k) (AggResult g)
+aggregate disc agg frame indices =
 	M.map (partialToFinal agg) (foldl' adjust M.empty indices)
 	where
-	indices = [0..(getRowCount frame-1)]
 	adjust store index =
-		M.insertWith' (\n o -> mergePartials agg [n, o])
-			(discretiseSingle disc frame index) (processSingle agg frame index) store
+		let merge = (\n o -> mergePartials agg [n, o]) in
+		let discretise = discretiseSingle disc frame index in
+		let process = processSingle agg frame index in
+		M.insertWith' merge discretise process store
