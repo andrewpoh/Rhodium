@@ -40,3 +40,14 @@ instance Matcher IntSplit where
 
 newtype DoubleSplit = DoubleSplit (Name, Double)
 	deriving (Eq, Show)
+
+instance Matcher DoubleSplit where
+	matchOne (DoubleSplit (name, x)) frame index =
+		let cell = getCell (getColumn frame name) index in
+		fromDoubleCell cell < x
+	matchMany (DoubleSplit (name, x)) frame indices =
+		let array = getDoubleColumn frame name in
+		map (\i -> array A.! i < x) indices
+	matchAll (DoubleSplit (name, x)) frame =
+		let array = getDoubleColumn frame name in
+		map (<x) (A.elems array)
