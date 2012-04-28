@@ -27,6 +27,15 @@ fromDoubleC :: DataColumn -> A.UArray Int Double
 fromDoubleC (DoubleC array) = array
 fromDoubleC _ = error "not double column"
 
+mapColumn ::
+	(A.UArray Int Int -> a)
+	-> (A.UArray Int Double -> a)
+	-> (A.Array Int String -> a)
+	-> DataColumn -> a
+mapColumn fInt _ _ (IntC array) = fInt array
+mapColumn _ fDbl _ (DoubleC array) = fDbl array
+mapColumn _ _ fStr (StringC array) = fStr array
+
 getCell :: DataColumn -> Int -> DataCell
 getCell (IntC array) ix = IntCell ((A.!) array ix)
 getCell (DoubleC array) ix = DoubleCell ((A.!) array ix)
