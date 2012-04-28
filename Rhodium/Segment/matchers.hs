@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -XExistentialQuantification #-}
-module Matchers
+module Rhodium.Segment.Matchers
 	where
 
 import qualified Data.Array.Unboxed as A
-import DataCell
-import DataColumn
-import Dataframe
+import Rhodium.Data.DataCell
+import Rhodium.Data.DataColumn
+import Rhodium.Data.Dataframe
 
 class Matcher m where
 	matchOne :: m -> Dataframe -> Int -> Bool

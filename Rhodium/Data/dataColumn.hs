@@ -1,9 +1,9 @@
-module DataColumn
+module Rhodium.Data.DataColumn
 	where
 
 import qualified Data.Array.Unboxed as A
 
-import DataCell
+import Rhodium.Data.DataCell
 
 data DataColumn =
 	IntC (A.UArray Int Int)

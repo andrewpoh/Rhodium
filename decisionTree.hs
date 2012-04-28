@@ -4,11 +4,11 @@ module DecisionTree
 import qualified Data.Array.Unboxed as A
 import Data.List
 import Data.Maybe
-import Aggregators
-import DataColumn
-import Dataframe
-import Matchers
-import Segments
+import Rhodium.Data.DataColumn
+import Rhodium.Data.Dataframe
+import Rhodium.Segment.Aggregators
+import Rhodium.Segment.Matchers
+import Rhodium.Segment.Segments
 
 data DecisionTree a =
 	DtSplit AnyMatcher (DecisionTree a) (DecisionTree a)

@@ -1,4 +1,4 @@
-module Dataframe
+module Rhodium.Data.Dataframe
 	where
 
 import qualified Data.List as L
@@ -6,8 +6,8 @@ import qualified Data.Map as M
 import Data.Array.Unboxed
 -- Require the Boxes package to print dataframes neatly
 import Text.PrettyPrint.Boxes as P
-import DataCell
-import DataColumn
+import Rhodium.Data.DataCell
+import Rhodium.Data.DataColumn
 
 type Name = String
 

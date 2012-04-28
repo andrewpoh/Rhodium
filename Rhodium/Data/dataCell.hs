@@ -1,4 +1,4 @@
-module DataCell
+module Rhodium.Data.DataCell
 	where
 
 data DataCell =

@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -XTypeFamilies #-}
-module Aggregators
+module Rhodium.Segment.Aggregators
 	where
 
 import qualified Data.Array.Unboxed as A
 import Data.List
 import qualified Data.Map as M
-import Dataframe
-import DataColumn
+import Rhodium.Data.Dataframe
+import Rhodium.Data.DataColumn
 
 class Aggregator a where
 	type AggPartial a :: *

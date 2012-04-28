@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -XTypeFamilies #-}
-module Discretisers
+module Rhodium.Segment.Discretisers
 	where
 
 import qualified Data.Array.Unboxed as A
-import DataCell
-import DataColumn
-import Dataframe
+import Rhodium.Data.DataCell
+import Rhodium.Data.DataColumn
+import Rhodium.Data.Dataframe
 
 class Discretiser k where
 	type DiscType k :: *

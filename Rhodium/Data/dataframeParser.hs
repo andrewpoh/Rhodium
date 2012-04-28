@@ -1,13 +1,13 @@
-module DataframeParser
+module Rhodium.Data.DataframeParser
 	where
 
 import Data.Either
 import Data.List
 import Data.Maybe
 import Text.ParserCombinators.Parsec
-import Dataframe
-import DataCell
-import DataColumn
+import Rhodium.Data.Dataframe
+import Rhodium.Data.DataCell
+import Rhodium.Data.DataColumn
 
 readTable :: String -> Dataframe
 readTable text =

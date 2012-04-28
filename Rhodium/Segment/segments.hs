@@ -1,17 +1,17 @@
 {-# OPTIONS_GHC -XTypeFamilies #-}
 {-# OPTIONS_GHC -XFlexibleContexts #-}
-module Segments
+module Rhodium.Segment.Segments
 	where
 
 import qualified Data.Array.Unboxed as A
 import Data.List
 import qualified Data.Map as M
-import Aggregators
-import Dataframe
-import DataColumn
-import DataCell
-import Discretisers
-import Matchers
+import Rhodium.Data.Dataframe
+import Rhodium.Data.DataColumn
+import Rhodium.Data.DataCell
+import Rhodium.Segment.Discretisers
+import Rhodium.Segment.Matchers
+import Rhodium.Segment.Aggregators
 
 -- Split creators should be unfolds
 
