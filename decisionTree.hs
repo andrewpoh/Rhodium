@@ -39,8 +39,8 @@ pickMatcher f r indices ms =
 	snd $ maximumBy (\x y-> compare (fst x) (fst y)) mAndScore
 
 -- larger is better
-scoreSplitter :: Matcher m => Dataframe -> Name -> [Int] -> m -> Double
-scoreSplitter frame r indices m =
+scoreMatcher :: Matcher m => Dataframe -> Name -> [Int] -> m -> Double
+scoreMatcher frame r indices m =
 	let (trues, falses) = partition (matchOne m frame) indices in
 	let impurityAll = sqDev frame r indices in
 	let impurityT = sqDev frame r trues in
