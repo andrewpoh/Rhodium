@@ -54,6 +54,9 @@ getColumnCount (Dataframe (cs, _)) = M.size cs
 getIndices :: Dataframe -> [Int]
 getIndices frame = [0..getRowCount frame - 1]
 
+columnList :: Dataframe -> [(Name, DataColumn)]
+columnList (Dataframe (cs, _)) = M.assocs cs
+
 makeFrame :: [(Name, Either [Int] (Either [String] [Double]))]
 	-> Dataframe
 makeFrame rawColumns =
