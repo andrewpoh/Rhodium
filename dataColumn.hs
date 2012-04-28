@@ -15,6 +15,13 @@ instance Show DataColumn where
 	show (StringC array) = "strings:" ++ (show $ A.elems array)
 	show (DoubleC array) = "doubles:" ++ (show $ A.elems array)
 
+data DataColumnType = IntType | DblType | StrType
+
+columnType :: DataColumn -> DataColumnType
+columnType (IntC _) = IntType
+columnType (DoubleC _) = DblType
+columnType (StringC _) = StrType
+
 fromIntC :: DataColumn -> A.UArray Int Int
 fromIntC (IntC array) = array
 fromIntC _ = error "not int column"
