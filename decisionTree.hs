@@ -6,6 +6,7 @@ import Data.List
 import Data.Maybe
 import Rhodium.Data.DataColumn
 import Rhodium.Data.Dataframe
+import Rhodium.Data.DataframeParser
 import Rhodium.Segment.Aggregators
 import Rhodium.Segment.Matchers
 import Rhodium.Segment.Segments
