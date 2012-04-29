@@ -52,18 +52,23 @@ commaSepLine1 entryParser = do
 
 integerOrDouble :: Parser (Either Int Double)
 integerOrDouble = do
-	numberSign <- optionMaybe (oneOf "-+")
-	numberLead <- many1 digit
+	leadingNumber <- signedNumber
 	doubleTail <- optionMaybe (char '.' >> many1 digit)
-	let performNegate = numberSign == Just '-'
-	let int1 = read numberLead
-	let int2 = if performNegate then -1 * int1 else int1
-	let double1 = numberLead++'.':(fromJust doubleTail)
-	let double2 = read double1
-	let double3 = if performNegate then -1.0 * double2 else double2
-	if isNothing doubleTail
-		then return $ Left int2
-		else return $ Right double3
+	exponent <- optionMaybe (oneOf "eE" >> signedNumber)
+	let isDouble = isJust doubleTail || isJust exponent
+	let wholeNumber = leadingNumber
+		++ maybe "" (\x -> '.':x) doubleTail
+		++ maybe "" (\x -> 'e':x) exponent
+	if not isDouble
+		then return $ Left (read leadingNumber)
+		else return $ Right (read wholeNumber)
+
+signedNumber :: Parser String
+signedNumber = do
+	numberSign <- optionMaybe (oneOf "-+")
+	numberBody <- many1 digit
+	let x = if numberSign == Just '-' then '-':numberBody else numberBody
+	return x
 
 rowLine :: Parser [DataCell]
 rowLine = commaSepLine1 dataCell
