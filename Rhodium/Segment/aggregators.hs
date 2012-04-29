@@ -19,6 +19,7 @@ class Aggregator a where
 	aggregateMany a f ixs = (partialToFinal a (processMany a f ixs))
 
 data CountAgg = CountAgg
+	deriving (Show,Eq)
 
 instance Aggregator CountAgg where
 	type AggPartial CountAgg = Int
@@ -43,7 +44,8 @@ instance (Aggregator a, Aggregator b) => Aggregator (CompoundAgg a b) where
 	partialToFinal (CompoundAgg a b) (pa, pb) =
 		(partialToFinal a pa, partialToFinal b pb)
 
-data MeanAgg = MeanAgg String
+data MeanAgg = MeanAgg Name
+	deriving (Show,Eq)
 
 instance Aggregator MeanAgg where
 	type AggPartial MeanAgg = (Double, Double)
