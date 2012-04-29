@@ -31,6 +31,11 @@ fromDoubleCell :: DataCell -> Double
 fromDoubleCell (DoubleCell x) = x
 fromDoubleCell _ = error "Not a DoubleCell"
 
+cellAsDouble :: DataCell -> Double
+cellAsDouble (DoubleCell x) = x
+cellAsDouble (IntCell x) = fromIntegral x
+cellAsDouble _ = error "Not a DoubleCell"
+
 fromStringCell :: DataCell -> String
 fromStringCell (StringCell x) = x
 fromStringCell _ = error "Not a StringCell"
