@@ -61,6 +61,8 @@ cellsToColumn cells
 		Just $ DoubleC (A.listArray bounds (map fromDoubleCell cells))
 	| all isStringCell cells =
 		Just $ StringC (A.listArray bounds (map fromStringCell cells))
+	| all (\x -> isDoubleCell x || isIntCell x) cells =
+		Just $ DoubleC (A.listArray bounds (map cellAsDouble cells))
 	| otherwise = Nothing
 	where
 	bounds = (0,length cells - 1)
