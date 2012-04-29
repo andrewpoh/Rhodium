@@ -3,6 +3,7 @@ module Rhodium.Data.Dataframe
 
 import qualified Data.List as L
 import qualified Data.Map as M
+import Data.Maybe
 import Data.Array.Unboxed
 -- Require the Boxes package to print dataframes neatly
 import Text.PrettyPrint.Boxes as P
@@ -15,25 +16,25 @@ data Dataframe = Dataframe (M.Map Name DataColumn, Int)
 instance Show Dataframe where
 	show df@(Dataframe (columns, rowCount)) =
 		let summaryBox = boxSummary df in
-		let columnBoxes = ((map boxColumn) . M.assocs) columns in
+		let columnBoxes = (map boxColumn . M.assocs) columns in
 		let mergedColumns = P.hsep 1 P.top columnBoxes in
 		P.render (mergedColumns P.// summaryBox)
 
 boxColumn :: (Name, DataColumn) -> P.Box
-boxColumn (n, (IntC array))
-	= P.vcat P.right $ (P.text n):(boxArray (P.text . show) array)
-boxColumn (n, (DoubleC array))
-	= P.vcat P.right $ (P.text n):(boxArray (P.text . show) array)
-boxColumn (n, (StringC array))
-	= P.vcat P.right $ (P.text n):(boxArray P.text array)
+boxColumn (n, IntC array)
+	= P.vcat P.right $ P.text n : boxArray (P.text . show) array 
+boxColumn (n, DoubleC array)
+	= P.vcat P.right $  P.text n : boxArray (P.text . show) array
+boxColumn (n, StringC array)
+	= P.vcat P.right $ P.text n : boxArray P.text array
 
 boxArray :: (IArray a d, Ix ix) => (d -> Box) -> a ix d -> [Box]
-boxArray f = (map f) . elems
+boxArray f = map f . elems
 
 boxSummary :: Dataframe -> P.Box
 boxSummary frame =
-	P.text ('(':(show $ getRowCount frame) ++ " rows, "
-		++(show $ getColumnCount frame) ++ " columns)")
+	P.text ('(':show (getRowCount frame) ++ " rows, "
+		++show (getColumnCount frame) ++ " columns)")
 
 testFrame :: Dataframe
 testFrame = makeFrame [
@@ -68,7 +69,7 @@ makeFrame :: [(Name, Either [Int] (Either [String] [Double]))]
 	-> Dataframe
 makeFrame rawColumns =
 	let columns = map (\(x,y)->(x,makeColumn y)) rawColumns in
-	let rowCount = minimum $ (map columnLength) $ snd $ unzip columns in
+	let rowCount = minimum $ map columnLength $ snd $ unzip columns in
 	Dataframe (M.fromList columns, rowCount)
 
 makeDataframe :: Int -> [(Name, DataColumn)] -> Dataframe
@@ -80,9 +81,7 @@ makeDataframe rowCount columns =
 getColumn :: Dataframe -> Name -> DataColumn
 getColumn (Dataframe (columns, _)) columnName =
 	let mColumn = M.lookup columnName columns in
-	case mColumn of
-		Nothing -> error ("Column "++columnName++" not found!")
-		Just c -> c
+	fromMaybe (error ("Column "++columnName++" not found!")) mColumn
 
 getIntColumn :: Dataframe -> Name -> UArray Int Int
 getIntColumn f n = fromIntC $ getColumn f n

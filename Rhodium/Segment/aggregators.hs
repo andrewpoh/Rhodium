@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -XTypeFamilies #-}
+{-# LANGUAGE TypeFamilies #-}
 module Rhodium.Segment.Aggregators
 	where
 
@@ -16,7 +16,7 @@ class Aggregator a where
 	mergePartials :: a -> [AggPartial a] -> AggPartial a
 	partialToFinal :: a -> AggPartial a -> AggResult a
 	aggregateMany :: a -> Dataframe -> [Int] -> AggResult a
-	aggregateMany a f ixs = (partialToFinal a (processMany a f ixs))
+	aggregateMany a f ixs = partialToFinal a (processMany a f ixs)
 
 data CountAgg = CountAgg
 	deriving (Show,Eq)
@@ -25,7 +25,7 @@ instance Aggregator CountAgg where
 	type AggPartial CountAgg = Int
 	type AggResult CountAgg = Int
 	processSingle _ _ _ = 1
-	processMany _ _ indices = length indices
+	processMany _ _ = length
 	mergePartials _ = sum
 	partialToFinal _ = id
 

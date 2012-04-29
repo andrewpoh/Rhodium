@@ -1,4 +1,4 @@
 Rhodium
 ======
 
-Statistical functions in Haskell
+Statistical functions in Haskell.

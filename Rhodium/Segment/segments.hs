@@ -1,5 +1,4 @@
-{-# OPTIONS_GHC -XTypeFamilies #-}
-{-# OPTIONS_GHC -XFlexibleContexts #-}
+{-# LANGUAGE TypeFamilies, FlexibleContexts #-}
 module Rhodium.Segment.Segments
 	where
 
@@ -48,7 +47,7 @@ intSplits2 frame minSize minStep intColName =
 intSplits :: Dataframe -> Int -> Int -> String -> [Int] -> [IntSplit]
 intSplits frame minSize minStep intColName indices =
 	let histogram = aggregate (IntDisc intColName) CountAgg frame indices in
-	let histogramList = M.assocs $ histogram in
+	let histogramList = M.assocs histogram in
 	let totalFrequencies = (sum . map snd) histogramList in
 	let initialFreq = snd $ head histogramList in
 	let thist = tail histogramList in
@@ -79,7 +78,7 @@ aggregate disc agg frame indices =
 	M.map (partialToFinal agg) (foldl' adjust M.empty indices)
 	where
 	adjust store index =
-		let merge = (\n o -> mergePartials agg [n, o]) in
+		let merge n o = mergePartials agg [n, o] in
 		let discretise = discretiseSingle disc frame index in
 		let process = processSingle agg frame index in
 		M.insertWith' merge discretise process store

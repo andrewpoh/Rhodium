@@ -17,6 +17,7 @@ To Do:
 Maybe not:
 * Make squared deviation an aggregation metric (requires 2 passes)
 * Maybe convert split generator into unfold (int split doesn't look like unfold)
+* Run HLint on the code (done, do it again later)
 
 Done:
 * Create double split generator

@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -XTypeFamilies #-}
+{-# LANGUAGE TypeFamilies #-}
 module Rhodium.Segment.Discretisers
 	where
 
@@ -11,7 +11,7 @@ class Discretiser k where
 	type DiscType k :: *
 	discretiseSingle :: k -> Dataframe -> Int -> DiscType k
 	discretiseMany :: k -> Dataframe -> [Int] -> [DiscType k]
-	discretiseMany k f ixs = map (discretiseSingle k f) ixs
+	discretiseMany k f = map (discretiseSingle k f)
 
 data ShowDisc = ShowDisc Name
 instance Discretiser ShowDisc where

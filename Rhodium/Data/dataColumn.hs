@@ -11,9 +11,9 @@ data DataColumn =
 	| DoubleC (A.UArray Int Double)
 
 instance Show DataColumn where
-	show (IntC array) = "ints:" ++ (show $ A.elems array)
-	show (StringC array) = "strings:" ++ (show $ A.elems array)
-	show (DoubleC array) = "doubles:" ++ (show $ A.elems array)
+	show (IntC array) = "ints:" ++ show (A.elems array)
+	show (StringC array) = "strings:" ++ show (A.elems array)
+	show (DoubleC array) = "doubles:" ++ show (A.elems array)
 
 data DataColumnType = IntType | DblType | StrType
 

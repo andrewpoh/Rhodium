@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -XExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification #-}
 module Rhodium.Segment.Matchers
 	where
 
