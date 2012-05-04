@@ -50,7 +50,8 @@ makeNode tc frame indices m =
 randomBestMatcher :: RandomGen g => RandomTreeConfig -> Dataframe -> [Int]
 	-> g -> (g, Maybe AnyMatcher)
 randomBestMatcher rtc@(RandomTreeConfig mWay mSize mStep r ns) f ixs g0 =
-	let (g1, sampledNs) = permutation g0 ns in
+	let (g1, permutedNs) = permutation g0 ns in
+	let sampledNs = take mWay permutedNs in
 	let tc = TreeConfig mSize mStep r sampledNs in
 	(g1, bestMatcher tc f ixs)
 
