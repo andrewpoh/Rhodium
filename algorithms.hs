@@ -2,11 +2,39 @@ module Algorithms
 	where
 
 import Control.Monad.ST
+import qualified Data.Array as A
 import Data.Array.IArray
 import Data.Array.ST
 import Data.STRef
 import Random
 
+sampleReplaceList :: RandomGen g => g -> [a] -> Int -> (g, [a])
+sampleReplaceList g l n =
+	let b = (0, length l - 1) in
+	let arr = A.listArray b l in
+	sampleReplace arr n g
+
+sampleReplace :: (RandomGen g, IArray ia a) =>
+	ia Int a -> Int -> g -> (g, [a])
+sampleReplace a n g =
+	let (gx, ixs) = randomList (bounds a) n g in
+	(gx, map ((!) a) ixs)
+
+randomList :: RandomGen g => (Int, Int) -> Int -> g -> (g, [Int])
+randomList b n g =
+	if n < 1
+		then (g, [])
+	else
+		let (x, g1) = randomR b g in
+		let (gx, xs) = randomList b (n-1) g1 in
+		(gx, x:xs)
+
+permutationList :: RandomGen g => g -> [a] -> (g, [a])
+permutationList g l =
+	let b = (0, length l - 1) in
+	let arr = A.listArray b l in
+	permutation g arr
+		
 permutation :: (RandomGen g, IArray ia a) => g -> ia Int a -> (g, [a])
 permutation g a =
 	let (down,up) = bounds a in

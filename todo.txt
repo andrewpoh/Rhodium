@@ -2,6 +2,7 @@ To Do:
 
 * Move test data into separate files
 * Increase sharing of computations and data structures
+* Fix strictness of algorithm functions
 * Add support for weights
 * Test regression tree prediction
 * Test parsing on large dataset
