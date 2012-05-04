@@ -8,8 +8,8 @@ import Data.Array.ST
 import Data.STRef
 import Random
 
-sampleReplaceList :: RandomGen g => g -> [a] -> Int -> (g, [a])
-sampleReplaceList g l n =
+sampleReplaceList :: RandomGen g => [a] -> Int -> g -> (g, [a])
+sampleReplaceList l n g =
 	let b = (0, length l - 1) in
 	let arr = A.listArray b l in
 	sampleReplace arr n g

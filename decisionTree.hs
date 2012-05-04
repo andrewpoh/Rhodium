@@ -47,13 +47,30 @@ makeNode tc frame indices m =
 	let tRight = growTree tc frame falses in
 	DtSplit m tLeft tRight
 
+growRandomTree :: RandomGen g => RandomTreeConfig -> Dataframe -> [Int]
+	-> g -> (g, DecisionTree Double)
+growRandomTree rtc@(RandomTreeConfig _ _ _ r _) f ixs g =
+	let (g1, bm) = randomBestMatcher rtc f ixs g in
+	let toNode = makeRandomNode rtc f ixs g1 in
+	let leaf = (g1, DtLeaf (aggregateMany (MeanAgg r) f ixs)) in
+	maybe leaf toNode bm
+
+makeRandomNode :: RandomGen g => RandomTreeConfig -> Dataframe -> [Int]
+	-> g -> AnyMatcher -> (g, DecisionTree Double)
+makeRandomNode rtc frame indices g m =
+	let (trues, falses) = partition (matchOne m frame) indices in
+	let (g1, tLeft) = growRandomTree rtc frame trues g in
+	let (g2, tRight) = growRandomTree rtc frame falses g1 in
+	(g2, DtSplit m tLeft tRight)
+
 randomBestMatcher :: RandomGen g => RandomTreeConfig -> Dataframe -> [Int]
 	-> g -> (g, Maybe AnyMatcher)
-randomBestMatcher rtc@(RandomTreeConfig mWay mSize mStep r ns) f ixs g0 =
+randomBestMatcher (RandomTreeConfig mWay mSize mStep r ns) f ixs g0 =
 	let (g1, permutedNs) = permutation g0 ns in
 	let sampledNs = take mWay permutedNs in
 	let tc = TreeConfig mSize mStep r sampledNs in
-	(g1, bestMatcher tc f ixs)
+	let (g2, rIxs) = sampleReplaceList ixs (length ixs) g1 in
+	(g2, bestMatcher tc f rIxs)
 
 bestMatcher :: TreeConfig -> Dataframe -> [Int] -> Maybe AnyMatcher
 bestMatcher (TreeConfig minSize minStep r ns) f ixs =
