@@ -4,12 +4,14 @@ module DecisionTree
 import qualified Data.Array.Unboxed as A
 import Data.List
 import Data.Maybe
+import Random
 import Rhodium.Data.DataColumn
 import Rhodium.Data.Dataframe
 import Rhodium.Data.DataframeParser
 import Rhodium.Segment.Aggregators
 import Rhodium.Segment.Matchers
 import Rhodium.Segment.Segments
+import Algorithms
 
 data DecisionTree a =
 	DtSplit AnyMatcher (DecisionTree a) (DecisionTree a)
@@ -27,7 +29,7 @@ runTree frame index (DtSplit matcher trueBranch falseBranch) =
 data TreeConfig = TreeConfig Int Int Name [Name]
 	deriving (Eq, Show)
 
-data RandomTreeConfig = RandomTreeConfig Int Int Int Name (Array Int Name)
+data RandomTreeConfig = RandomTreeConfig Int Int Int Name (A.Array Int Name)
 	deriving (Eq, Show)
 
 growTree :: TreeConfig -> Dataframe -> [Int] -> DecisionTree Double
@@ -46,34 +48,11 @@ makeNode tc frame indices m =
 	DtSplit m tLeft tRight
 
 randomBestMatcher :: RandomGen g => RandomTreeConfig -> Dataframe -> [Int]
-	-> Rand g (Maybe AnyMatcher)
-randomBestMatcher rtc@(RandomTreeConfig mWay mSize mStep r ns) f ixs =
-	sampledNs <- randomSelect mWay ns
+	-> g -> (g, Maybe AnyMatcher)
+randomBestMatcher rtc@(RandomTreeConfig mWay mSize mStep r ns) f ixs g0 =
+	let (g1, sampledNs) = permutation g0 ns in
 	let tc = TreeConfig mSize mStep r sampledNs in
-	return (bestMatcher tc f ixs)
-
-randomSelect :: RandomGen g => Int -> Array Int a => [a]
-randomSelect n a =
-	let bounds = getBounds a in
-	let (down,up) = bounds in
-	let size = up-down+1 in
-	map ((A.!) a) (shuffle size)
-
-shuffle :: RandomGen g => Int -> Rand g [a]
-shuffle n =
-	let nTakeOne = n-1 in
-	let arrayBounds = (0, nTakeOne)
-	let array = newListArray arrayBounds [0..nTakeOne] in
-	shuffle_ array nTakeOne
-
-shuffle_ :: MArray Int Int -> Int -> [Int]
-shuffle_ array 0 = readArray array 0
-shuffle_ array t =
-	otherIndex <- getRandomR (0, t)
-	let currentItem = readArray array t
-	let otherItem = readArray array otherIndex
-	writeArray array otherIndex currentItem
-	otherItem : (shuffle_ array (t-1))
+	(g1, bestMatcher tc f ixs)
 
 bestMatcher :: TreeConfig -> Dataframe -> [Int] -> Maybe AnyMatcher
 bestMatcher (TreeConfig minSize minStep r ns) f ixs =
