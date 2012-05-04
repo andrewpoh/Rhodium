@@ -27,6 +27,9 @@ runTree frame index (DtSplit matcher trueBranch falseBranch) =
 data TreeConfig = TreeConfig Int Int Name [Name]
 	deriving (Eq, Show)
 
+data RandomTreeConfig = RandomTreeConfig Int Int Int Name (Array Int Name)
+	deriving (Eq, Show)
+
 growTree :: TreeConfig -> Dataframe -> [Int] -> DecisionTree Double
 growTree tc@(TreeConfig _ _ r _) f ixs =
 	let bm = bestMatcher tc f ixs in
@@ -41,6 +44,36 @@ makeNode tc frame indices m =
 	let tLeft = growTree tc frame trues in
 	let tRight = growTree tc frame falses in
 	DtSplit m tLeft tRight
+
+randomBestMatcher :: RandomGen g => RandomTreeConfig -> Dataframe -> [Int]
+	-> Rand g (Maybe AnyMatcher)
+randomBestMatcher rtc@(RandomTreeConfig mWay mSize mStep r ns) f ixs =
+	sampledNs <- randomSelect mWay ns
+	let tc = TreeConfig mSize mStep r sampledNs in
+	return (bestMatcher tc f ixs)
+
+randomSelect :: RandomGen g => Int -> Array Int a => [a]
+randomSelect n a =
+	let bounds = getBounds a in
+	let (down,up) = bounds in
+	let size = up-down+1 in
+	map ((A.!) a) (shuffle size)
+
+shuffle :: RandomGen g => Int -> Rand g [a]
+shuffle n =
+	let nTakeOne = n-1 in
+	let arrayBounds = (0, nTakeOne)
+	let array = newListArray arrayBounds [0..nTakeOne] in
+	shuffle_ array nTakeOne
+
+shuffle_ :: MArray Int Int -> Int -> [Int]
+shuffle_ array 0 = readArray array 0
+shuffle_ array t =
+	otherIndex <- getRandomR (0, t)
+	let currentItem = readArray array t
+	let otherItem = readArray array otherIndex
+	writeArray array otherIndex currentItem
+	otherItem : (shuffle_ array (t-1))
 
 bestMatcher :: TreeConfig -> Dataframe -> [Int] -> Maybe AnyMatcher
 bestMatcher (TreeConfig minSize minStep r ns) f ixs =
