@@ -59,6 +59,9 @@ getRowCount (Dataframe (_, r)) = r
 getColumnCount :: Dataframe -> Int
 getColumnCount (Dataframe (cs, _)) = M.size cs
 
+getColumnNames :: Dataframe -> [Name]
+getColumnNames (Dataframe (cs, _)) = M.keys cs
+
 getIndices :: Dataframe -> [Int]
 getIndices frame = [0..getRowCount frame - 1]
 
