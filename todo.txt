@@ -1,5 +1,20 @@
 To Do:
 
+http://lambdor.net/?p=258:
+(run as admin)
+cabal install (module) -p --reinstall
+
+rm *.hi
+rm *.o
+rm .\Rhodium\Data\*.hi
+rm .\Rhodium\Data\*.o
+rm .\Rhodium\Segment\*.hi
+rm .\Rhodium\Segment\*.o
+
+ghc -prof -auto-all -rtsopts .\decisionTree.hs
+(ensure no *.prof files remain)
+.\decisionTree.exe +RTS -p -RTS
+
 * Move test data into separate files
 * Increase sharing of computations and data structures
 * Fix strictness of algorithm functions
