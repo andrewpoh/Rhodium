@@ -30,7 +30,7 @@ makeForest = do
 	let seed = mkStdGen 1337
 	let names = tail (getColumnNames table)
 	let namesArray = A.listArray (0, length names - 1) names
-	let config = RandomTreeConfig 5 9 9 "Activity" namesArray
+	let config = RandomTreeConfig 5 10 10 "Activity" namesArray
 	let allIndices = getIndices table
 	let (seed1, trees) = growRandomForest config 50 table allIndices seed
 	return trees
@@ -161,10 +161,11 @@ pickMatcher f r indices ms =
 -- larger is better
 scoreMatcher :: Matcher m => Dataframe -> Name -> [Int] -> m -> Double
 scoreMatcher frame r indices m =
-	let (trues, falses) = partition (matchOne m frame) indices in
-	let impurityAll = sqDev frame r indices in
-	let impurityT = sqDev frame r trues in
-	let impurityF = sqDev frame r falses in
+	let (trues, falses) = partitionMany m frame indices in
+	let sqDevFrame = sqDev frame r in
+	let impurityAll = sqDevFrame indices in
+	let impurityT = sqDevFrame trues in
+	let impurityF = sqDevFrame falses in
 	impurityAll - impurityT - impurityF
 
 sqDev :: Dataframe -> Name -> [Int] -> Double
