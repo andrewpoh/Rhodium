@@ -39,9 +39,9 @@ scoreForest :: [DecisionTree Double] -> IO ()
 scoreForest trees = do
 	rawTable <- readFile "miniTest.csv"
 	let table = readTable rawTable
-	let predictions = map (\ix -> sum (map (\t -> runTree table t ix) trees)/(fromIntegral (length trees))) (getIndices table)
+	let predictions = map (\ix -> sum' (map (\t -> runTree table t ix) trees)/(fromIntegral (length trees))) (getIndices table)
 	let response = A.elems (getDoubleColumn table "Activity")
-	let treeScore = sum (zipWith logLoss response predictions) / (fromIntegral (length response))
+	let treeScore = sum' (zipWith logLoss response predictions) / (fromIntegral (length response))
 	print treeScore
 
 scoreTree :: DecisionTree Double -> IO ()
@@ -50,7 +50,7 @@ scoreTree tree = do
 	let table = readTable rawTable
 	let predictions = map (runTree table tree) (getIndices table)
 	let response = A.elems (getDoubleColumn table "Activity")
-	let treeScore = sum (zipWith logLoss response predictions) / (fromIntegral (length response))
+	let treeScore = sum' (zipWith logLoss response predictions) / (fromIntegral (length response))
 	print treeScore
 
 makeTree :: IO (DecisionTree Double)
@@ -172,15 +172,15 @@ sqDev :: Dataframe -> Name -> [Int] -> Double
 sqDev frame doubleName indices =
 	let doubleColumn = getDoubleColumn frame doubleName in
 	let ys = map ((A.!) doubleColumn) indices in
-	let numerator = sum ys in
+	let numerator = sum' ys in
 	let denominator = (fromIntegral . length) ys in
 	let average = numerator/denominator in
 	let devSq = map (\x -> let d = average - x in d*d) ys in
-	sum devSq
+	sum' devSq
 
 squaredDeviation :: [Double] -> [Double] -> Double
 squaredDeviation actual prediction =
-	sum $ zipWith (\x y-> let d = x - y in d * d) actual prediction
+	sum' $ zipWith (\x y-> let d = x - y in d * d) actual prediction
 
 -- generate Matchers
 -- calculate improvement
