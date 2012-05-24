@@ -178,6 +178,18 @@ sqDev frame doubleName indices =
 	let devSq = map (\x -> let d = average - x in d*d) ys in
 	sum' devSq
 
+-- This appears to have worse performance
+sqDev2 :: Dataframe -> Name -> [Int] -> Double
+sqDev2 frame doubleName indices =
+	let doubleColumn = getDoubleColumn frame doubleName in
+	let ys = map ((A.!) doubleColumn) indices in
+	squaredDeviation' ys
+
+squaredDeviation' :: [Double] -> Double
+squaredDeviation' xs =
+	let meanX = mean' xs in
+	foldl' (\s x-> let d = meanX - x in d*d+s) 0.0 xs
+
 squaredDeviation :: [Double] -> [Double] -> Double
 squaredDeviation actual prediction =
 	sum' $ zipWith (\x y-> let d = x - y in d * d) actual prediction
