@@ -72,8 +72,8 @@ splitInts_ minSize minStep totalf columnName
 		else keepElement
 
 -- This requires Flexible Contexts, which might be too much
-aggregate :: (Ord (DiscType k), Discretiser k, Aggregator g) =>
-	k -> g -> Dataframe -> [Int] -> M.Map (DiscType k) (AggResult g)
+aggregate :: (Ord l, Discretiser k l, Aggregator g) =>
+	k -> g -> Dataframe -> [Int] -> M.Map l (AggResult g)
 aggregate disc agg frame indices =
 	M.map (partialToFinal agg) (foldl' adjust M.empty indices)
 	where

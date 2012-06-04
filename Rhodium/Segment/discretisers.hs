@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Rhodium.Segment.Discretisers
 	where
 
@@ -8,15 +9,13 @@ import Rhodium.Data.DataCell
 import Rhodium.Data.DataColumn
 import Rhodium.Data.Dataframe
 
-class Discretiser k where
-	type DiscType k :: *
-	discretiseSingle :: k -> Dataframe -> Int -> DiscType k
-	discretiseMany :: k -> Dataframe -> [Int] -> [DiscType k]
+class Discretiser k l where
+	discretiseSingle :: k -> Dataframe -> Int -> l
+	discretiseMany :: k -> Dataframe -> [Int] -> [l]
 	discretiseMany k f = map (discretiseSingle k f)
 
 data IntGrouping = IntGrouping Name (M.Map Int Int) Int
-instance Discretiser IntGrouping where
-	type DiscType IntGrouping = Int
+instance Discretiser IntGrouping Int where
 	discretiseSingle (IntGrouping n mappings defaultLevel) f ix =
 		let datum = getIntColumn f n A.! ix in
 		M.findWithDefault defaultLevel datum mappings
@@ -27,15 +26,13 @@ instance Discretiser IntGrouping where
 			ixs
 
 data ShowDisc = ShowDisc Name
-instance Discretiser ShowDisc where
-	type DiscType ShowDisc = String
+instance Discretiser ShowDisc String where
 	discretiseSingle (ShowDisc n) f i =
 		let cell = getCell (getColumn f n) i in
 		showCell cell
 
 data IntDisc = IntDisc Name
-instance Discretiser IntDisc where
-	type DiscType IntDisc = Int
+instance Discretiser IntDisc Int where
 	discretiseSingle (IntDisc n) f i =
 		let intColumn = getIntColumn f n in
 		intColumn A.! i
