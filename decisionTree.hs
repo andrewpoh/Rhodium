@@ -6,7 +6,7 @@
 import qualified Data.Array.Unboxed as A
 import Data.List
 import Data.Maybe
-import Random
+import System.Random
 import Rhodium.Data.DataColumn
 import Rhodium.Data.Dataframe
 import Rhodium.Data.DataframeParser

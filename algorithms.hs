@@ -6,7 +6,7 @@ import qualified Data.Array as A
 import Data.Array.IArray
 import Data.Array.ST
 import Data.STRef
-import Random
+import System.Random
 
 sampleReplaceList :: RandomGen g => [a] -> Int -> g -> (g, [a])
 sampleReplaceList l n g =
