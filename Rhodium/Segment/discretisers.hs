@@ -26,12 +26,14 @@ instance Discretiser IntGrouping Int where
 			ixs
 
 data ShowDisc = ShowDisc Name
+	deriving (Show, Eq)
 instance Discretiser ShowDisc String where
 	discretiseSingle (ShowDisc n) f i =
 		let cell = getCell (getColumn f n) i in
 		showCell cell
 
 data IntDisc = IntDisc Name
+	deriving (Show, Eq)
 instance Discretiser IntDisc Int where
 	discretiseSingle (IntDisc n) f i =
 		let intColumn = getIntColumn f n in
