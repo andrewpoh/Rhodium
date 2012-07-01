@@ -3,9 +3,14 @@
 -- ghc -prof -auto-all -rtsopts DecisionTree.hs
 -- +RTS -p
 
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 import qualified Data.Array.Unboxed as A
 import Data.List
 import Data.Maybe
+import qualified Data.Foldable as F
+import qualified Data.Sequence as S
 import System.Random
 import Rhodium.Data.DataColumn
 import Rhodium.Data.Dataframe
@@ -18,10 +23,21 @@ import Maths
 
 main :: IO ()
 main = do
+	let f = squaredDeviation8
+	let input = A.listArray (0,100000) [0..100000]
+	let makeIndices seed = S.fromList $ (take 20000) (randomRs (A.bounds input) (mkStdGen seed))
+	let result = foldl' (\acc i -> f input (makeIndices i)+acc) 0.0 [0..99]
+	print result
+
+doForest :: IO ()
+doForest = do
 	forest <- makeForest
 	scoreForest forest
---	tree <- makeTree
---	scoreTree tree
+
+doTree :: IO ()
+doTree = do
+	tree <- makeTree
+	scoreTree tree
 
 makeForest :: IO ([DecisionTree Double])
 makeForest = do
@@ -173,10 +189,75 @@ sqDev frame doubleName indices =
 	let doubleColumn = getDoubleColumn frame doubleName in
 	let ys = map ((A.!) doubleColumn) indices in
 	let numerator = sum' ys in
-	let denominator = (fromIntegral . length) ys in
+	let denominator = (fromIntegral . length) indices in
 	let average = numerator/denominator in
 	let devSq = map (\x -> let d = average - x in d*d) ys in
 	sum' devSq
+
+squaredDeviation1 :: A.Array Int Double -> [Int] -> Double
+squaredDeviation1 doubleColumn indices =
+	let ys = map ((A.!) doubleColumn) indices in
+	let numerator = sum' ys in
+	let denominator = (fromIntegral . length) indices in
+	let average = numerator/denominator in
+	let devSq = map (\x -> let d = average - x in d*d) ys in
+	sum' devSq
+
+squaredDeviation2 :: A.Array Int Double -> [Int] -> Double
+squaredDeviation2 doubleColumn indices =
+	let ys = map ((A.!) doubleColumn) indices in
+	let numerator = sum' ys in
+	let denominator = (fromIntegral . length) indices in
+	let average = numerator/denominator in
+	let devSq = map (\i -> let d = average - (doubleColumn A.! i) in d*d) indices in
+	sum' devSq
+
+squaredDeviation3 :: A.Array Int Double -> [Int] -> Double
+squaredDeviation3 doubleColumn indices =
+	let ys = map ((A.!) doubleColumn) indices in
+	squaredDeviation' ys
+
+squaredDeviation4 :: A.Array Int Double -> [Int] -> Double
+squaredDeviation4 doubleColumn indices =
+	let ys = map ((A.!) doubleColumn) indices in
+	let numerator = sum' ys in
+	let denominator = (fromIntegral . length) indices in
+	let average = numerator/denominator in
+	foldl' (\s y -> let !d = average - y in d*d+s) 0.0 ys
+
+squaredDeviation5 :: A.Array Int Double -> [Int] -> Double
+squaredDeviation5 doubleColumn indices =
+	let ys = map ((A.!) doubleColumn) indices in
+	let numerator = sum' ys in
+	let denominator = (fromIntegral . length) indices in
+	let average = numerator/denominator in
+	foldl' (\s y -> let !d = average - y in let !r = d*d+s in r) 0.0 ys
+
+squaredDeviation6 :: A.Array Int Double -> [Int] -> Double
+squaredDeviation6 doubleColumn indices =
+	let !numerator = foldl' (\acc i -> (doubleColumn A.! i) + acc) 0.0 indices in
+	let !denominator = (fromIntegral . length) indices in
+	let !average = numerator/denominator in
+	foldl' (\acc i -> let !d = average - (doubleColumn A.! i) in let !r=d*d+acc in r) 0.0 indices
+
+squaredDeviation7 :: A.Array Int Double -> [Int] -> Double
+squaredDeviation7 doubleColumn indices =
+	let !ys = map ((A.!) doubleColumn) indices in
+	let numerator = sum' ys in
+	let denominator = (fromIntegral . length) indices in
+	let average = numerator/denominator in
+	foldl' (\s y -> let !d = average - y in d*d+s) 0.0 ys
+
+squaredDeviation8 :: A.Array Int Double -> S.Seq Int -> Double
+squaredDeviation8 doubleColumn indices =
+	let ys = fmap ((A.!) doubleColumn) indices in
+	let numerator = seqSum' ys in
+	let denominator = (fromIntegral . S.length) indices in
+	let average = numerator/denominator in
+	F.foldl' (\s y -> let !d = average - y in d*d+s) 0.0 ys
+
+seqSum' :: S.Seq Double -> Double
+seqSum' = F.foldl' (+) 0.0
 
 -- This appears to have worse performance
 sqDev2 :: Dataframe -> Name -> [Int] -> Double
@@ -190,8 +271,8 @@ squaredDeviation' xs =
 	let meanX = mean' xs in
 	foldl' (\s x-> let d = meanX - x in d*d+s) 0.0 xs
 
-squaredDeviation :: [Double] -> [Double] -> Double
-squaredDeviation actual prediction =
+squaredDeviationSimple :: [Double] -> [Double] -> Double
+squaredDeviationSimple actual prediction =
 	sum' $ zipWith (\x y-> let d = x - y in d * d) actual prediction
 
 -- generate Matchers
