@@ -2,7 +2,7 @@
 module Rhodium.Segment.Aggregators
 	where
 
-import qualified Data.Array.Unboxed as A
+import qualified Data.Vector.Unboxed as V
 import Data.List
 import qualified Data.Map as M
 import Rhodium.Data.Dataframe
@@ -50,9 +50,9 @@ data MeanAgg = MeanAgg Name
 instance Aggregator MeanAgg where
 	type AggPartial MeanAgg = (Double, Double)
 	type AggResult MeanAgg = Double
-	processSingle (MeanAgg columnName) frame index = (getDoubleColumn frame columnName A.! index, 1.0)
+	processSingle (MeanAgg columnName) frame index = (getDoubleColumn frame columnName V.! index, 1.0)
 	processMany (MeanAgg columnName) frame indices =
 		let column = getDoubleColumn frame columnName in
-		(sum $ map ((A.!) column) indices, fromIntegral $ length indices)
+		(sum $ map ((V.!) column) indices, fromIntegral $ length indices)
 	mergePartials _ partials = (sum $ map fst partials, sum $ map snd partials)
 	partialToFinal _ (n,d) = n/d

@@ -1,6 +1,7 @@
 module Rhodium.Data.DataframeParser
 	where
 
+import qualified Data.Text as T
 import Data.Either
 import Data.List
 import Data.Maybe
@@ -26,7 +27,7 @@ processTable (h, rs) =
 	let uniformColumnPairs =
 		filter (\(x,y) -> isJust y) rawColumnPairs in
 	let columnPairs =
-		map (\(x,y) -> (x, fromJust y)) uniformColumnPairs in
+		map (\(x,y) -> (T.pack x, fromJust y)) uniformColumnPairs in
 	makeDataframe rowCount columnPairs
 
 rawTable :: Parser ([String],[[DataCell]])

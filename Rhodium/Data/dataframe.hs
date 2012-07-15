@@ -4,13 +4,15 @@ module Rhodium.Data.Dataframe
 import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Maybe
-import Data.Array.Unboxed
+import qualified Data.Text as T
+import qualified Data.Vector as B
+import qualified Data.Vector.Unboxed as V
 -- Require the Boxes package to print dataframes neatly
 import Text.PrettyPrint.Boxes as P
 import Rhodium.Data.DataCell
 import Rhodium.Data.DataColumn
 
-type Name = String
+type Name = T.Text
 
 data Dataframe = Dataframe (M.Map Name DataColumn, Int)
 instance Show Dataframe where
@@ -22,14 +24,17 @@ instance Show Dataframe where
 
 boxColumn :: (Name, DataColumn) -> P.Box
 boxColumn (n, IntC array)
-	= P.vcat P.right $ P.text n : boxArray (P.text . show) array 
+	= P.vcat P.right $ P.text (T.unpack n) : boxUVector (P.text . show) array 
 boxColumn (n, DoubleC array)
-	= P.vcat P.right $  P.text n : boxArray (P.text . show) array
+	= P.vcat P.right $  P.text (T.unpack n) : boxUVector (P.text . show) array
 boxColumn (n, StringC array)
-	= P.vcat P.right $ P.text n : boxArray P.text array
+	= P.vcat P.right $ P.text (T.unpack n) : boxBVector (P.text . T.unpack) array
 
-boxArray :: (IArray a d, Ix ix) => (d -> Box) -> a ix d -> [Box]
-boxArray f = map f . elems
+boxUVector :: V.Unbox d => (d -> Box) -> V.Vector d -> [Box]
+boxUVector f = map f . V.toList
+
+boxBVector :: (d -> Box) -> B.Vector d -> [Box]
+boxBVector f = map f . B.toList
 
 boxSummary :: Dataframe -> P.Box
 boxSummary frame =
@@ -68,10 +73,10 @@ getIndices frame = [0..getRowCount frame - 1]
 columnList :: Dataframe -> [(Name, DataColumn)]
 columnList (Dataframe (cs, _)) = M.assocs cs
 
-makeFrame :: [(Name, Either [Int] (Either [String] [Double]))]
+makeFrame :: [(String, Either [Int] (Either [String] [Double]))]
 	-> Dataframe
 makeFrame rawColumns =
-	let columns = map (\(x,y)->(x,makeColumn y)) rawColumns in
+	let columns = map (\(x,y)->(T.pack x,makeColumn y)) rawColumns in
 	let rowCount = minimum $ map columnLength $ snd $ unzip columns in
 	Dataframe (M.fromList columns, rowCount)
 
@@ -84,13 +89,13 @@ makeDataframe rowCount columns =
 getColumn :: Dataframe -> Name -> DataColumn
 getColumn (Dataframe (columns, _)) columnName =
 	let mColumn = M.lookup columnName columns in
-	fromMaybe (error ("Column "++columnName++" not found!")) mColumn
+	fromMaybe (error ("Column "++T.unpack columnName++" not found!")) mColumn
 
-getIntColumn :: Dataframe -> Name -> UArray Int Int
+getIntColumn :: Dataframe -> Name -> V.Vector Int
 getIntColumn f n = fromIntC $ getColumn f n
 
-getDoubleColumn :: Dataframe ->  Name -> UArray Int Double
+getDoubleColumn :: Dataframe ->  Name -> V.Vector Double
 getDoubleColumn f n = fromDoubleC $ getColumn f n
 
-getStringColumn :: Dataframe ->  Name -> Array Int String
+getStringColumn :: Dataframe ->  Name -> B.Vector T.Text
 getStringColumn f n = fromStringC $ getColumn f n

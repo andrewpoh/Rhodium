@@ -1,10 +1,14 @@
+{-# OPTIONS_GHC -funbox-strict-fields #-}
+
 module Rhodium.Data.DataCell
 	where
 
+import qualified Data.Text as T
+
 data DataCell =
-	IntCell Int
-	| StringCell String
-	| DoubleCell Double
+	IntCell !Int
+	| StringCell !T.Text
+	| DoubleCell !Double
 	deriving (Eq,Show)
 
 showCell (IntCell x) = show x
@@ -36,6 +40,6 @@ cellAsDouble (DoubleCell x) = x
 cellAsDouble (IntCell x) = fromIntegral x
 cellAsDouble _ = error "Not a DoubleCell"
 
-fromStringCell :: DataCell -> String
+fromStringCell :: DataCell -> T.Text
 fromStringCell (StringCell x) = x
 fromStringCell _ = error "Not a StringCell"

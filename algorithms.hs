@@ -2,7 +2,7 @@ module Algorithms
 	where
 
 import Control.Monad.ST
-import qualified Data.Array as A
+import qualified Data.Vector as V
 import Data.Array.IArray
 import Data.Array.ST
 import Data.STRef
@@ -10,15 +10,14 @@ import System.Random
 
 sampleReplaceList :: RandomGen g => [a] -> Int -> g -> (g, [a])
 sampleReplaceList l n g =
-	let b = (0, length l - 1) in
-	let arr = A.listArray b l in
+	let arr = V.fromList l in
 	sampleReplace arr n g
 
-sampleReplace :: (RandomGen g, IArray ia a) =>
-	ia Int a -> Int -> g -> (g, [a])
+sampleReplace :: (RandomGen g) =>
+	V.Vector a -> Int -> g -> (g, [a])
 sampleReplace a n g =
-	let (gx, ixs) = randomList (bounds a) n g in
-	(gx, map ((!) a) ixs)
+	let (gx, ixs) = randomList (0, V.length a - 1) n g in
+	(gx, map ((V.!) a) ixs)
 
 randomList :: RandomGen g => (Int, Int) -> Int -> g -> (g, [Int])
 randomList b n g =
@@ -31,16 +30,13 @@ randomList b n g =
 
 permutationList :: RandomGen g => g -> [a] -> (g, [a])
 permutationList g l =
-	let b = (0, length l - 1) in
-	let arr = A.listArray b l in
+	let arr = V.fromList l in
 	permutation g arr
 		
-permutation :: (RandomGen g, IArray ia a) => g -> ia Int a -> (g, [a])
+permutation :: (RandomGen g) => g -> V.Vector a -> (g, [a])
 permutation g a =
-	let (down,up) = bounds a in
-	let size = up-down+1 in
-	let (g1, indices) = shuffle g size in
-	(g1, map ((!) a) indices)
+	let (g1, indices) = shuffle g (V.length a) in
+	(g1, map ((V.!) a) indices)
 
 shuffle :: RandomGen g => g -> Int -> (g, [Int])
 shuffle g n = runST (shuffle_ g n)

@@ -18,7 +18,7 @@ ghc -prof -auto-all -rtsopts .\decisionTree.hs
 * Move test data into separate files
 * Increase sharing of computations and data structures
 * Fix strictness of algorithm functions
-* Paramaterise makeNode to factor out random and non-random construction
+* Parameterise makeNode to factor out random and non-random construction
 * Add support for weights
 * Test regression tree prediction
 * Test parsing on large dataset

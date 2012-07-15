@@ -3,7 +3,7 @@
 module Rhodium.Segment.Discretisers
 	where
 
-import qualified Data.Array.Unboxed as A
+import qualified Data.Vector.Unboxed as V
 import qualified Data.Map as M
 import Rhodium.Data.DataCell
 import Rhodium.Data.DataColumn
@@ -17,12 +17,12 @@ class Discretiser k l where
 data IntGrouping = IntGrouping Name (M.Map Int Int) Int
 instance Discretiser IntGrouping Int where
 	discretiseSingle (IntGrouping n mappings defaultLevel) f ix =
-		let datum = getIntColumn f n A.! ix in
+		let datum = getIntColumn f n V.! ix in
 		M.findWithDefault defaultLevel datum mappings
 	discretiseMany (IntGrouping n mappings defaultLevel) f ixs =
 		let columnArray = getIntColumn f n in
 		map (\ix ->
-			M.findWithDefault defaultLevel (columnArray A.! ix) mappings)
+			M.findWithDefault defaultLevel (columnArray V.! ix) mappings)
 			ixs
 
 data ShowDisc = ShowDisc Name
@@ -37,4 +37,4 @@ data IntDisc = IntDisc Name
 instance Discretiser IntDisc Int where
 	discretiseSingle (IntDisc n) f i =
 		let intColumn = getIntColumn f n in
-		intColumn A.! i
+		intColumn V.! i

@@ -6,11 +6,11 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-import qualified Data.Array.Unboxed as A
+import qualified Data.Text as T
+import qualified Data.Vector as B
+import qualified Data.Vector.Unboxed as V
 import Data.List
 import Data.Maybe
-import qualified Data.Foldable as F
-import qualified Data.Sequence as S
 import System.Random
 import Rhodium.Data.DataColumn
 import Rhodium.Data.Dataframe
@@ -23,11 +23,15 @@ import Maths
 
 main :: IO ()
 main = do
-	let f = squaredDeviation8
-	let input = A.listArray (0,100000) [0..100000]
-	let makeIndices seed = S.fromList $ (take 20000) (randomRs (A.bounds input) (mkStdGen seed))
-	let result = foldl' (\acc i -> f input (makeIndices i)+acc) 0.0 [0..99]
-	print result
+	let f = squaredDeviation3
+	let input = V.fromList [0..100000]
+	let makeIndices seed = (take 20000) (randomRs (0, V.length input - 1) (mkStdGen seed))
+	let result1 = foldl' (\acc i -> f input (makeIndices i)+acc) 0.0 [0..99]
+	print result1
+	let result2 = foldl' (\acc i -> f input (makeIndices i)+acc) 0.0 [0..99]
+	print result2
+	let result3 = foldl' (\acc i -> f input (makeIndices i)+acc) 0.0 [0..99]
+	print result3
 
 doForest :: IO ()
 doForest = do
@@ -45,8 +49,8 @@ makeForest = do
 	let table = readTable rawTable
 	let seed = mkStdGen 1337
 	let names = tail (getColumnNames table)
-	let namesArray = A.listArray (0, length names - 1) names
-	let config = RandomTreeConfig 5 10 10 "Activity" namesArray
+	let namesArray = B.fromList names
+	let config = RandomTreeConfig 5 10 10 (T.pack "Activity") namesArray
 	let allIndices = getIndices table
 	let (seed1, trees) = growRandomForest config 50 table allIndices seed
 	return trees
@@ -56,7 +60,7 @@ scoreForest trees = do
 	rawTable <- readFile "miniTest.csv"
 	let table = readTable rawTable
 	let predictions = map (\ix -> sum' (map (\t -> runTree table t ix) trees)/(fromIntegral (length trees))) (getIndices table)
-	let response = A.elems (getDoubleColumn table "Activity")
+	let response = V.toList (getDoubleColumn table (T.pack "Activity"))
 	let treeScore = sum' (zipWith logLoss response predictions) / (fromIntegral (length response))
 	print treeScore
 
@@ -65,7 +69,7 @@ scoreTree tree = do
 	rawTable <- readFile "miniTest.csv"
 	let table = readTable rawTable
 	let predictions = map (runTree table tree) (getIndices table)
-	let response = A.elems (getDoubleColumn table "Activity")
+	let response = V.toList (getDoubleColumn table (T.pack "Activity"))
 	let treeScore = sum' (zipWith logLoss response predictions) / (fromIntegral (length response))
 	print treeScore
 
@@ -75,8 +79,8 @@ makeTree = do
 	let table = readTable rawTable
 	let seed = mkStdGen 1337
 	let names = tail (getColumnNames table)
-	let namesArray = A.listArray (0, length names - 1) names
-	let config = RandomTreeConfig 5 9 9 "Activity" namesArray
+	let namesArray = B.fromList names
+	let config = RandomTreeConfig 5 9 9 (T.pack "Activity") namesArray
 	let allIndices = getIndices table
 	let (seed1, tree) = growRandomTree config table allIndices seed
 	return tree
@@ -98,7 +102,7 @@ data TreeConfig = TreeConfig Int Int Name [Name]
 	deriving (Eq, Show)
 
 -- mway minsize minstep response variables
-data RandomTreeConfig = RandomTreeConfig Int Int Int Name (A.Array Int Name)
+data RandomTreeConfig = RandomTreeConfig Int Int Int Name (B.Vector Name)
 	deriving (Eq, Show)
 
 growTree :: TreeConfig -> Dataframe -> [Int] -> DecisionTree Double
@@ -187,83 +191,25 @@ scoreMatcher frame r indices m =
 sqDev :: Dataframe -> Name -> [Int] -> Double
 sqDev frame doubleName indices =
 	let doubleColumn = getDoubleColumn frame doubleName in
-	let ys = map ((A.!) doubleColumn) indices in
+	let ys = map ((V.!) doubleColumn) indices in
 	let numerator = sum' ys in
 	let denominator = (fromIntegral . length) indices in
 	let average = numerator/denominator in
 	let devSq = map (\x -> let d = average - x in d*d) ys in
 	sum' devSq
 
-squaredDeviation1 :: A.Array Int Double -> [Int] -> Double
+squaredDeviation1 :: V.Vector Double -> [Int] -> Double
 squaredDeviation1 doubleColumn indices =
-	let ys = map ((A.!) doubleColumn) indices in
+	let ys = map ((V.!) doubleColumn) indices in
 	let numerator = sum' ys in
 	let denominator = (fromIntegral . length) indices in
 	let average = numerator/denominator in
 	let devSq = map (\x -> let d = average - x in d*d) ys in
 	sum' devSq
 
-squaredDeviation2 :: A.Array Int Double -> [Int] -> Double
-squaredDeviation2 doubleColumn indices =
-	let ys = map ((A.!) doubleColumn) indices in
-	let numerator = sum' ys in
-	let denominator = (fromIntegral . length) indices in
-	let average = numerator/denominator in
-	let devSq = map (\i -> let d = average - (doubleColumn A.! i) in d*d) indices in
-	sum' devSq
-
-squaredDeviation3 :: A.Array Int Double -> [Int] -> Double
+squaredDeviation3 :: V.Vector Double -> [Int] -> Double
 squaredDeviation3 doubleColumn indices =
-	let ys = map ((A.!) doubleColumn) indices in
-	squaredDeviation' ys
-
-squaredDeviation4 :: A.Array Int Double -> [Int] -> Double
-squaredDeviation4 doubleColumn indices =
-	let ys = map ((A.!) doubleColumn) indices in
-	let numerator = sum' ys in
-	let denominator = (fromIntegral . length) indices in
-	let average = numerator/denominator in
-	foldl' (\s y -> let !d = average - y in d*d+s) 0.0 ys
-
-squaredDeviation5 :: A.Array Int Double -> [Int] -> Double
-squaredDeviation5 doubleColumn indices =
-	let ys = map ((A.!) doubleColumn) indices in
-	let numerator = sum' ys in
-	let denominator = (fromIntegral . length) indices in
-	let average = numerator/denominator in
-	foldl' (\s y -> let !d = average - y in let !r = d*d+s in r) 0.0 ys
-
-squaredDeviation6 :: A.Array Int Double -> [Int] -> Double
-squaredDeviation6 doubleColumn indices =
-	let !numerator = foldl' (\acc i -> (doubleColumn A.! i) + acc) 0.0 indices in
-	let !denominator = (fromIntegral . length) indices in
-	let !average = numerator/denominator in
-	foldl' (\acc i -> let !d = average - (doubleColumn A.! i) in let !r=d*d+acc in r) 0.0 indices
-
-squaredDeviation7 :: A.Array Int Double -> [Int] -> Double
-squaredDeviation7 doubleColumn indices =
-	let !ys = map ((A.!) doubleColumn) indices in
-	let numerator = sum' ys in
-	let denominator = (fromIntegral . length) indices in
-	let average = numerator/denominator in
-	foldl' (\s y -> let !d = average - y in d*d+s) 0.0 ys
-
-squaredDeviation8 :: A.Array Int Double -> S.Seq Int -> Double
-squaredDeviation8 doubleColumn indices =
-	let ys = fmap ((A.!) doubleColumn) indices in
-	let numerator = seqSum' ys in
-	let denominator = (fromIntegral . S.length) indices in
-	let average = numerator/denominator in
-	F.foldl' (\s y -> let !d = average - y in d*d+s) 0.0 ys
-
-seqSum' :: S.Seq Double -> Double
-seqSum' = F.foldl' (+) 0.0
-
--- This appears to have worse performance
-sqDev2 :: Dataframe -> Name -> [Int] -> Double
-sqDev2 frame doubleName indices =
-	let doubleColumn = getDoubleColumn frame doubleName in
-	let ys = map ((A.!) doubleColumn) indices in
+	let ys = map ((V.!) doubleColumn) indices in
 	squaredDeviation' ys
 
 squaredDeviation' :: [Double] -> Double
@@ -273,8 +219,4 @@ squaredDeviation' xs =
 
 squaredDeviationSimple :: [Double] -> [Double] -> Double
 squaredDeviationSimple actual prediction =
-	sum' $ zipWith (\x y-> let d = x - y in d * d) actual prediction
-
--- generate Matchers
--- calculate improvement
--- determine stopping condition (mostly pure, few samples, no attributes)
+	sum' $ zipWith (\x y-> let !d = x - y in d * d) actual prediction

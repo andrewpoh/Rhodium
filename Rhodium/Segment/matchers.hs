@@ -2,7 +2,7 @@
 module Rhodium.Segment.Matchers
 	where
 
-import qualified Data.Array.Unboxed as A
+import qualified Data.Vector.Unboxed as V
 import Data.List
 import Rhodium.Data.DataCell
 import Rhodium.Data.DataColumn
@@ -38,13 +38,13 @@ instance Matcher IntSplit where
 		fromIntCell cell < x
 	matchMany (IntSplit (name, x)) frame indices =
 		let array = getIntColumn frame name in
-		map (\i -> array A.! i < x) indices
+		map (\i -> array V.! i < x) indices
 	matchAll (IntSplit (name, x)) frame =
 		let array = getIntColumn frame name in
-		map (<x) (A.elems array)
+		map (<x) (V.toList array)
 	partitionMany (IntSplit (name, x)) frame indices =
 		let array = getIntColumn frame name in
-		partition (\i -> array A.! i < x) indices
+		partition (\i -> array V.! i < x) indices
 
 newtype DoubleSplit = DoubleSplit (Name, Double)
 	deriving (Eq, Show)
@@ -55,10 +55,10 @@ instance Matcher DoubleSplit where
 		fromDoubleCell cell < x
 	matchMany (DoubleSplit (name, x)) frame indices =
 		let array = getDoubleColumn frame name in
-		map (\i -> array A.! i < x) indices
+		map (\i -> array V.! i < x) indices
 	matchAll (DoubleSplit (name, x)) frame =
 		let array = getDoubleColumn frame name in
-		map (<x) (A.elems array)
+		map (<x) (V.toList array)
 	partitionMany (DoubleSplit (name, x)) frame indices =
 		let array = getDoubleColumn frame name in
-		partition (\i -> array A.! i < x) indices
+		partition (\i -> array V.! i < x) indices

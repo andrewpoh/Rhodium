@@ -2,7 +2,7 @@
 module Rhodium.Segment.Segments
 	where
 
-import qualified Data.Array.Unboxed as A
+import qualified Data.Vector.Unboxed as V
 import Data.List
 import qualified Data.Map as M
 import Rhodium.Data.Dataframe
@@ -14,18 +14,18 @@ import Rhodium.Segment.Aggregators
 
 -- Split creators should be unfolds
 
-doubleSplits :: Dataframe -> Int -> Int -> String -> [Int] -> [DoubleSplit]
+doubleSplits :: Dataframe -> Int -> Int -> Name -> [Int] -> [DoubleSplit]
 doubleSplits frame minSize minStep doubleColName indices =
 	let rowCount = length indices in
 	let doubleArray = getDoubleColumn frame doubleColName in
-	let elements = map ((A.!) doubleArray) indices in
-	let sorted = (A.listArray (0, rowCount-1) . sort) elements in
+	let elements = map ((V.!) doubleArray) indices in
+	let sorted = (V.fromList . sort) elements in
 	let op = splitDoubles_ doubleColName minSize minStep sorted rowCount in
 	unfoldr op minSize
 
 -- should check for duplicates
 -- totalf should match length of array
-splitDoubles_ :: Name -> Int -> Int -> A.UArray Int Double
+splitDoubles_ :: Name -> Int -> Int -> V.Vector Double
 	-> Int -> Int
 	-> Maybe (DoubleSplit, Int)
 splitDoubles_ columnName minSize minStep sortedArray totalf index =
@@ -33,7 +33,7 @@ splitDoubles_ columnName minSize minStep sortedArray totalf index =
 	if remf < minSize
 		then Nothing
 		else
-			let breakpoint = sortedArray A.! index in
+			let breakpoint = sortedArray V.! index in
 			Just (DoubleSplit (columnName, breakpoint), index+minStep)
 {-
  - Should implement unfold version
@@ -44,7 +44,7 @@ intSplits2 frame minSize minStep intColName =
 	let histogram = M.assocs $ aggregate intDisc CountAgg frame in
 	unfoldr 
 -}
-intSplits :: Dataframe -> Int -> Int -> String -> [Int] -> [IntSplit]
+intSplits :: Dataframe -> Int -> Int -> Name -> [Int] -> [IntSplit]
 intSplits frame minSize minStep intColName indices =
 	let histogram = aggregate (IntDisc intColName) CountAgg frame indices in
 	let histogramList = M.assocs histogram in
@@ -56,7 +56,7 @@ intSplits frame minSize minStep intColName indices =
 		else snd $ foldl op ((initialFreq, initialFreq), []) thist
 
 splitInts_ ::
-	Int -> Int -> Int -> String
+	Int -> Int -> Int -> Name
 	-> ((Int, Int), [IntSplit]) -> (Int, Int)
 	-> ((Int, Int), [IntSplit])
 splitInts_ minSize minStep totalf columnName
