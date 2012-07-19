@@ -5,6 +5,7 @@
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -funbox-strict-fields #-}
 
 import qualified Data.Text as T
 import qualified Data.Vector as B
@@ -23,7 +24,9 @@ import Maths
 
 main :: IO ()
 main = do
-	doForest
+	doSquaredDeviation
+
+data UDouble3 = UDouble3 !Double !Double !Double
 
 doSquaredDeviation :: IO ()
 doSquaredDeviation = do
@@ -202,7 +205,33 @@ sqDev :: Dataframe -> Name -> [Int] -> Double
 sqDev frame doubleName indices =
 	let doubleColumn = getDoubleColumn frame doubleName in
 	let ys = map ((V.!) doubleColumn) indices in
-	squaredDeviation' ys
+	squaredDeviation ys
+
+squaredDeviation3 doubleColumn indices =
+	let ys = map ((V.!) doubleColumn) indices in
+	squaredDeviationSingle ys
+
+-- mean(y)^2 * length + sum(y^2) -2* sum(y)^2/length
+squaredDeviation :: [Double] -> Double
+squaredDeviation xs =
+	let !meanX = mean' xs in
+	let !sumX2 = foldl' (\acc x -> x*x+acc) 0 xs in
+	let !sumX = sum' xs in
+	let !l = fromIntegral $ length xs in
+	let !r = meanX * meanX * l + sumX2 - (2*sumX*sumX/l) in
+	r
+
+squaredDeviationSingle :: [Double] -> Double
+squaredDeviationSingle xs =
+	let (UDouble3 nX sumX sumX2) =
+		foldl' squaredDeviationPass (UDouble3 0.0 0.0 0.0) xs in
+	let !meanX = sumX/nX in
+	let !r = meanX * meanX * nX + sumX2 - (2*sumX*sumX/nX) in
+	r
+
+squaredDeviationPass :: UDouble3 -> Double -> UDouble3
+squaredDeviationPass (UDouble3 nX sumX sumX2) x =
+	UDouble3 (nX+1) (sumX+x) (x*x+sumX2)
 
 squaredDeviation' :: [Double] -> Double
 squaredDeviation' xs =
