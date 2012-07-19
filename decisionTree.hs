@@ -25,15 +25,16 @@ import Maths
 main :: IO ()
 main = do
 	doSquaredDeviation
+--	doForest
 
 data UDouble3 = UDouble3 !Double !Double !Double
 
 doSquaredDeviation :: IO ()
 doSquaredDeviation = do
-	let f = squaredDeviation3
+	let f = squaredDeviation
 	let input = V.fromList [0..100000]
 	let makeIndices seed = (take 20000) (randomRs (0, V.length input - 1) (mkStdGen seed))
-	let doAcc acc i = f input (makeIndices i)+acc 
+	let doAcc acc i = f (map ((V.!) input) (makeIndices i))+acc
 	let result0 = foldl' doAcc 0.0 [0..99]
 	let result1 = foldl' doAcc 0.0 [0..99]
 	let result2 = foldl' doAcc 0.0 [0..99]
@@ -207,22 +208,9 @@ sqDev frame doubleName indices =
 	let ys = map ((V.!) doubleColumn) indices in
 	squaredDeviation ys
 
-squaredDeviation3 doubleColumn indices =
-	let ys = map ((V.!) doubleColumn) indices in
-	squaredDeviationSingle ys
-
 -- mean(y)^2 * length + sum(y^2) -2* sum(y)^2/length
-squaredDeviation :: [Double] -> Double
-squaredDeviation xs =
-	let !meanX = mean' xs in
-	let !sumX2 = foldl' (\acc x -> x*x+acc) 0 xs in
-	let !sumX = sum' xs in
-	let !l = fromIntegral $ length xs in
-	let !r = meanX * meanX * l + sumX2 - (2*sumX*sumX/l) in
-	r
-
-squaredDeviationSingle :: [Double] -> Double
-squaredDeviationSingle xs =
+squaredDeviation' :: [Double] -> Double
+squaredDeviation' xs =
 	let (UDouble3 nX sumX sumX2) =
 		foldl' squaredDeviationPass (UDouble3 0.0 0.0 0.0) xs in
 	let !meanX = sumX/nX in
@@ -233,8 +221,8 @@ squaredDeviationPass :: UDouble3 -> Double -> UDouble3
 squaredDeviationPass (UDouble3 nX sumX sumX2) x =
 	UDouble3 (nX+1) (sumX+x) (x*x+sumX2)
 
-squaredDeviation' :: [Double] -> Double
-squaredDeviation' xs =
+squaredDeviation :: [Double] -> Double
+squaredDeviation xs =
 	let !meanX = mean' xs in
 	foldl' (deviationPlus' meanX) 0.0 xs
 
