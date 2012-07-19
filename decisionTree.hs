@@ -23,16 +23,26 @@ import Maths
 
 main :: IO ()
 main = do
+	doForest
+
+doSquaredDeviation :: IO ()
+doSquaredDeviation = do
 	let f = squaredDeviation3
 	let input = V.fromList [0..100000]
 	let makeIndices seed = (take 20000) (randomRs (0, V.length input - 1) (mkStdGen seed))
-	let result1 = foldl' (\acc i -> f input (makeIndices i)+acc) 0.0 [0..99]
-	print result1
-	let result2 = foldl' (\acc i -> f input (makeIndices i)+acc) 0.0 [0..99]
-	print result2
-	let result3 = foldl' (\acc i -> f input (makeIndices i)+acc) 0.0 [0..99]
-	print result3
-
+	let doAcc acc i = f input (makeIndices i)+acc 
+	let result0 = foldl' doAcc 0.0 [0..99]
+	let result1 = foldl' doAcc 0.0 [0..99]
+	let result2 = foldl' doAcc 0.0 [0..99]
+	let result3 = foldl' doAcc 0.0 [0..99]
+	let result4 = foldl' doAcc 0.0 [0..99]
+	let result5 = foldl' doAcc 0.0 [0..99]
+	let result6 = foldl' doAcc 0.0 [0..99]
+	let result7 = foldl' doAcc 0.0 [0..99]
+	let result8 = foldl' doAcc 0.0 [0..99]
+	let result9 = foldl' doAcc 0.0 [0..99]
+	print $ sum' [result0, result1, result2, result3, result4, result5, result6, result7, result8, result9]
+	
 doForest :: IO ()
 doForest = do
 	forest <- makeForest
@@ -192,30 +202,19 @@ sqDev :: Dataframe -> Name -> [Int] -> Double
 sqDev frame doubleName indices =
 	let doubleColumn = getDoubleColumn frame doubleName in
 	let ys = map ((V.!) doubleColumn) indices in
-	let numerator = sum' ys in
-	let denominator = (fromIntegral . length) indices in
-	let average = numerator/denominator in
-	let devSq = map (\x -> let d = average - x in d*d) ys in
-	sum' devSq
-
-squaredDeviation1 :: V.Vector Double -> [Int] -> Double
-squaredDeviation1 doubleColumn indices =
-	let ys = map ((V.!) doubleColumn) indices in
-	let numerator = sum' ys in
-	let denominator = (fromIntegral . length) indices in
-	let average = numerator/denominator in
-	let devSq = map (\x -> let d = average - x in d*d) ys in
-	sum' devSq
-
-squaredDeviation3 :: V.Vector Double -> [Int] -> Double
-squaredDeviation3 doubleColumn indices =
-	let ys = map ((V.!) doubleColumn) indices in
 	squaredDeviation' ys
 
 squaredDeviation' :: [Double] -> Double
 squaredDeviation' xs =
-	let meanX = mean' xs in
-	foldl' (\s x-> let d = meanX - x in d*d+s) 0.0 xs
+	let !meanX = mean' xs in
+	foldl' (deviationPlus' meanX) 0.0 xs
+
+deviationPlus' :: Double -> Double -> Double -> Double
+deviationPlus' m acc x =
+	let !d = m - x in
+	let !d2 = d * d in
+	let !r = d2+acc in
+	r
 
 squaredDeviationSimple :: [Double] -> [Double] -> Double
 squaredDeviationSimple actual prediction =
