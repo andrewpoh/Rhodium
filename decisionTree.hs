@@ -10,6 +10,7 @@
 import qualified Data.Text as T
 import qualified Data.Vector as B
 import qualified Data.Vector.Unboxed as V
+import Data.Function
 import Data.List
 import Data.Maybe
 import System.Random
@@ -24,10 +25,12 @@ import Maths
 
 main :: IO ()
 main = do
-	doSquaredDeviation
---	doForest
+--	doSquaredDeviation
+	doForest
 
+-- Should swap boxed for unboxed
 data UDouble3 = UDouble3 !Double !Double !Double
+type BDouble3 = (Double, Double, Double)
 
 doSquaredDeviation :: IO ()
 doSquaredDeviation = do
@@ -184,6 +187,54 @@ makeMatcher minSize minStep f ixs (n, c) = case columnType c of
 	DblType -> map AnyMatcher (doubleSplits f minSize minStep n ixs)
 	_ -> []
 
+bestDoubleSplit :: V.Vector Double -> V.Vector Double
+	-> Maybe (Double, Double)
+bestDoubleSplit doubles response =
+	let sorted = sortBy (compare `on` fst)
+		(zip (V.toList doubles) (V.toList response)) in
+	let duplicateHead = fst $ head sorted in
+	let before0 = (0.0, 0.0, 0.0) in
+	let allN = fromIntegral $ V.length response in
+	let allY = V.sum response in
+	let allYSquared = V.foldl' (\s y -> y*y+s) 0.0 response in
+	let after0 = (allN, allY, allYSquared) in
+	let (_, _, _, result) = foldl' findDoubleSplit
+		(duplicateHead, before0, after0, Nothing) sorted in
+	result
+
+-- replace with VDouble3
+findDoubleSplit :: (Double, BDouble3, BDouble3, Maybe (Double, Double))
+	-> (Double, Double)
+	-> (Double, BDouble3, BDouble3, Maybe (Double, Double))
+findDoubleSplit (lastX, (bN, bY, bYSquared), (aN, aY, aYSquared), best)
+	(x, y) =
+	let ySquared = y*y in
+	let bN1 = bN+1.0 in
+	let bY1 = bY+y in
+	let bYSquared1 = bYSquared+ySquared in
+	let aN1 = aN-1.0 in
+	let aY1 = aY - y in
+	let aYSquared1 = aYSquared - ySquared in
+	let before1 = (bN1, bY1, bYSquared1) in
+	let after1 = (aN1, aY1, aYSquared1) in
+	let moveOn = (x, before1, after1, best) in
+	if x >= lastX then
+		moveOn
+	else
+		let splitHere = (x+lastX)/2.0 in
+		let bMean1 = bY1/bN1 in
+		let beforeSquaredDev1 =
+			bMean1 * bMean1 * bN1 + bYSquared1 - (2*bY1*bMean1) in
+		let aMean1 = aY1/aN1 in
+		let afterSquaredDev1 =
+			aMean1 * aMean1 * aN1 + aYSquared1 - (2*aY1*aMean1) in
+		let scoreHere = beforeSquaredDev1 + afterSquaredDev1 in
+		let bestHere = Just (splitHere, scoreHere) in
+		let best1 = maybe bestHere
+			(\(bestSplit, bestScore) ->
+				if scoreHere >= bestScore then best else bestHere) best in
+		(x, before1, after1, best1)
+		
 pickMatcher :: Matcher m => Dataframe -> Name -> [Int] -> [m] -> Maybe m
 pickMatcher f r indices ms =
 	let mScores = map (scoreMatcher f r indices) ms in
