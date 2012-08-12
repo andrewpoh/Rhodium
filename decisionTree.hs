@@ -218,7 +218,7 @@ findDoubleSplit (lastX, (bN, bY, bYSquared), (aN, aY, aYSquared), best)
 	let before1 = (bN1, bY1, bYSquared1) in
 	let after1 = (aN1, aY1, aYSquared1) in
 	let moveOn = (x, before1, after1, best) in
-	if x >= lastX then
+	if x <= lastX then
 		moveOn
 	else
 		let splitHere = (x+lastX)/2.0 in
