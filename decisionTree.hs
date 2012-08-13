@@ -22,6 +22,7 @@ import Rhodium.Segment.Matchers
 import Rhodium.Segment.Segments
 import Algorithms
 import Maths
+import Debug.Trace
 
 main :: IO ()
 main = do
@@ -187,19 +188,26 @@ makeMatcher minSize minStep f ixs (n, c) = case columnType c of
 	DblType -> map AnyMatcher (doubleSplits f minSize minStep n ixs)
 	_ -> []
 
-bestDoubleSplit :: V.Vector Double -> V.Vector Double
+bestDoubleSplit :: Int -> V.Vector Double -> V.Vector Double
 	-> Maybe (Double, Double)
-bestDoubleSplit doubles response =
+bestDoubleSplit minimumSize doubles response =
 	let sorted = sortBy (compare `on` fst)
 		(zip (V.toList doubles) (V.toList response)) in
-	let duplicateHead = fst $ head sorted in
-	let before0 = (0.0, 0.0, 0.0) in
+	let justBefore = take minimumSize sorted in
+	let justOnwards = drop minimumSize sorted in
+	let lastX = fst $ last justBefore in
+	let bN = fromIntegral minimumSize in
+	let bY = sum $ map snd justBefore in
+	let bYSquared = sum $ map (\(_,x)->x*x) justBefore in
+	let before0 = (bN, bY, bYSquared) in
 	let allN = fromIntegral $ V.length response in
 	let allY = V.sum response in
 	let allYSquared = V.foldl' (\s y -> y*y+s) 0.0 response in
-	let after0 = (allN, allY, allYSquared) in
+	let possibleSplitCount = V.length response - (2*minimumSize) + 1 in
+	let rest = take possibleSplitCount justOnwards in
+	let after0 = (allN-bN, allY-bY, allYSquared-bYSquared) in
 	let (_, _, _, result) = foldl' findDoubleSplit
-		(duplicateHead, before0, after0, Nothing) sorted in
+		(lastX, before0, after0, Nothing) rest in
 	result
 
 -- replace with VDouble3
@@ -222,19 +230,19 @@ findDoubleSplit (lastX, (bN, bY, bYSquared), (aN, aY, aYSquared), best)
 		moveOn
 	else
 		let splitHere = (x+lastX)/2.0 in
-		let bMean1 = bY1/bN1 in
-		let beforeSquaredDev1 =
-			bMean1 * bMean1 * bN1 + bYSquared1 - (2*bY1*bMean1) in
-		let aMean1 = aY1/aN1 in
-		let afterSquaredDev1 =
-			aMean1 * aMean1 * aN1 + aYSquared1 - (2*aY1*aMean1) in
-		let scoreHere = beforeSquaredDev1 + afterSquaredDev1 in
+		let bMean = bY/bN in
+		let beforeSquaredDev =
+			bMean * bMean * bN + bYSquared - (2*bY*bMean) in
+		let aMean = aY/aN in
+		let afterSquaredDev =
+			aMean * aMean * aN + aYSquared - (2*aY*aMean) in
+		let scoreHere = beforeSquaredDev + afterSquaredDev in
 		let bestHere = Just (splitHere, scoreHere) in
 		let best1 = maybe bestHere
 			(\(bestSplit, bestScore) ->
 				if scoreHere >= bestScore then best else bestHere) best in
 		(x, before1, after1, best1)
-		
+
 pickMatcher :: Matcher m => Dataframe -> Name -> [Int] -> [m] -> Maybe m
 pickMatcher f r indices ms =
 	let mScores = map (scoreMatcher f r indices) ms in
