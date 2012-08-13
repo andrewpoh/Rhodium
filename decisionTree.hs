@@ -188,11 +188,11 @@ makeMatcher minSize minStep f ixs (n, c) = case columnType c of
 	DblType -> map AnyMatcher (doubleSplits f minSize minStep n ixs)
 	_ -> []
 
-bestDoubleSplit :: Int -> V.Vector Double -> V.Vector Double
+bestDoubleSplit :: Int -> V.Vector Double -> V.Vector Double -> [Int]
 	-> Maybe (Double, Double)
-bestDoubleSplit minimumSize doubles response =
+bestDoubleSplit minimumSize doubles response ix =
 	let sorted = sortBy (compare `on` fst)
-		(zip (V.toList doubles) (V.toList response)) in
+		(zip (map ((V.!) doubles) ix) (map ((V.!) response) ix)) in
 	let justBefore = take minimumSize sorted in
 	let justOnwards = drop minimumSize sorted in
 	let lastX = fst $ last justBefore in
@@ -200,10 +200,11 @@ bestDoubleSplit minimumSize doubles response =
 	let bY = sum $ map snd justBefore in
 	let bYSquared = sum $ map (\(_,x)->x*x) justBefore in
 	let before0 = (bN, bY, bYSquared) in
-	let allN = fromIntegral $ V.length response in
-	let allY = V.sum response in
-	let allYSquared = V.foldl' (\s y -> y*y+s) 0.0 response in
-	let possibleSplitCount = V.length response - (2*minimumSize) + 1 in
+	let ys = map snd sorted in
+	let allN = fromIntegral $ length sorted in
+	let allY = sum' ys in
+	let allYSquared = foldl' (\s y -> y*y+s) 0.0 ys in
+	let possibleSplitCount = length sorted - (2*minimumSize) + 1 in
 	let rest = take possibleSplitCount justOnwards in
 	let after0 = (allN-bN, allY-bY, allYSquared-bYSquared) in
 	let (_, _, _, result) = foldl' findDoubleSplit
