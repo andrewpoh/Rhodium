@@ -173,19 +173,27 @@ randomBestMatcher (RandomTreeConfig mWay mSize mStep r ns) f ixs g0 =
 
 bestMatcher :: TreeConfig -> Dataframe -> [Int] -> Maybe AnyMatcher
 bestMatcher (TreeConfig minSize minStep r ns) f ixs =
-	let ms = makeMatchers minSize minStep f ixs ns in
+	let ms = makeMatchers minSize minStep f ixs r ns in
 	pickMatcher f r ixs ms
 
-makeMatchers :: Int -> Int -> Dataframe -> [Int] -> [Name] -> [AnyMatcher]
-makeMatchers minSize minStep f ixs ns =
+makeMatchers :: Int -> Int -> Dataframe -> [Int] -> Name -> [Name]
+	-> [AnyMatcher]
+makeMatchers minSize minStep f ixs r ns =
 	let cs = map (\n -> (n, getColumn f n)) ns in
-	concatMap (makeMatcher minSize minStep f ixs) cs
+	let response = getDoubleColumn f r in
+	concatMap (makeMatcher minSize minStep f response ixs) cs
 
-makeMatcher :: Int -> Int -> Dataframe -> [Int]
+makeMatcher :: Int -> Int -> Dataframe -> V.Vector Double -> [Int]
 	-> (Name, DataColumn) -> [AnyMatcher]
-makeMatcher minSize minStep f ixs (n, c) = case columnType c of
+makeMatcher minSize minStep f response ixs (n, c) = case columnType c of
 	IntType -> map AnyMatcher (intSplits f minSize minStep n ixs)
-	DblType -> map AnyMatcher (doubleSplits f minSize minStep n ixs)
+	DblType ->
+		let continuous = fromDoubleC c in
+		let bestSplit = bestDoubleSplit minSize continuous response ixs in
+		maybe []
+			(\(split, _) -> [AnyMatcher (DoubleSplit (n,split))]) bestSplit
+
+--	DblType -> map AnyMatcher (doubleSplits f minSize minStep n ixs)
 	_ -> []
 
 bestDoubleSplit :: Int -> V.Vector Double -> V.Vector Double -> [Int]
