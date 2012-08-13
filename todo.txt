@@ -15,6 +15,8 @@ ghc -prof -auto-all -rtsopts .\decisionTree.hs
 (ensure no *.prof files remain)
 .\decisionTree.exe +RTS -p -RTS
 
+* Use criterion for profiling
+
 * Move test data into separate files
 * Increase sharing of computations and data structures
 * Fix strictness of algorithm functions
@@ -35,8 +37,3 @@ Maybe not:
 * Make squared deviation an aggregation metric (requires 2 passes)
 * Maybe convert split generator into unfold (int split doesn't look like unfold)
 * Run HLint on the code (done, do it again later)
-
-Done:
-* Create double split generator
-* Adapt algorithms to operate on row subsets
-* Implement squared deviation metric
