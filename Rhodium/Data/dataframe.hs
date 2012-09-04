@@ -1,4 +1,8 @@
-module Rhodium.Data.Dataframe
+module Rhodium.Data.Dataframe (
+	Name,
+	Dataframe, getRowCount, getColumnCount, getColumnNames, getIndices,
+	toColumnList, makeDataframe,
+	getColumn, getIntColumn, getDoubleColumn, getStringColumn)
 	where
 
 import qualified Data.List as L
@@ -41,23 +45,6 @@ boxSummary frame =
 	P.text ('(':show (getRowCount frame) ++ " rows, "
 		++show (getColumnCount frame) ++ " columns)")
 
-testFrame :: Dataframe
-testFrame = makeFrame [
-	("int", Left [1,2,3,4,5]),
-	("string", Right $ Left ["A","B","C","B","A"]),
-	("double", Right $ Right [2.0, 4.0, 6.0, 8.0, 10.0])
-	]
-
-bigFrame :: Dataframe
-bigFrame = makeFrame [
-	("r", Right $ Right [2.0, 4.0, 6.0, 8.0, 10.0, 3.0, 1.0, 9.0, 5.0, 7.0]),
-	("i1", Left [1,2,3,4,5,2,3,3,4,5]),
-	("i2", Left [3,2,4,4,3,2,2,3,4,2]),
-	("d1", Right $ Right [3.5, 2.5, 4.0, 6.7, 5.2, 6.1, 4.5, 3.2, 4.2, 5.5])
-	]
-
-testCol1 = ("a", makeColumn (Left [1,2,3]))
-
 getRowCount :: Dataframe -> Int
 getRowCount (Dataframe (_, r)) = r
 
@@ -70,15 +57,8 @@ getColumnNames (Dataframe (cs, _)) = M.keys cs
 getIndices :: Dataframe -> [Int]
 getIndices frame = [0..getRowCount frame - 1]
 
-columnList :: Dataframe -> [(Name, DataColumn)]
-columnList (Dataframe (cs, _)) = M.assocs cs
-
-makeFrame :: [(String, Either [Int] (Either [String] [Double]))]
-	-> Dataframe
-makeFrame rawColumns =
-	let columns = map (\(x,y)->(T.pack x,makeColumn y)) rawColumns in
-	let rowCount = minimum $ map columnLength $ snd $ unzip columns in
-	Dataframe (M.fromList columns, rowCount)
+toColumnList :: Dataframe -> [(Name, DataColumn)]
+toColumnList (Dataframe (cs, _)) = M.assocs cs
 
 makeDataframe :: Int -> [(Name, DataColumn)] -> Dataframe
 makeDataframe rowCount columns =

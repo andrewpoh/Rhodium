@@ -1,11 +1,8 @@
---module DecisionTree
---	where
--- ghc -prof -auto-all -rtsopts DecisionTree.hs
--- +RTS -p
-
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-}
+module Rhodium.Models.RandomForest
+	where
 
 import qualified Data.Text as T
 import qualified Data.Vector as B
@@ -14,6 +11,7 @@ import Data.Function
 import Data.List
 import Data.Maybe
 import System.Random
+import Rhodium.Models.DecisionTree
 import Rhodium.Data.DataColumn
 import Rhodium.Data.Dataframe
 import Rhodium.Data.DataframeParser
@@ -22,121 +20,20 @@ import Rhodium.Segment.Matchers
 import Rhodium.Segment.Segments
 import Algorithms
 import Maths
-import Debug.Trace
-
-main :: IO ()
-main = do
---	doSquaredDeviation
-	doForest
 
 -- Should swap boxed for unboxed
 data UDouble3 = UDouble3 !Double !Double !Double
 type BDouble3 = (Double, Double, Double)
+type Forest a = [DecisionTree a]
 
-doSquaredDeviation :: IO ()
-doSquaredDeviation = do
-	let f = squaredDeviation
-	let input = V.fromList [0..100000]
-	let makeIndices seed = (take 20000) (randomRs (0, V.length input - 1) (mkStdGen seed))
-	let doAcc acc i = f (map ((V.!) input) (makeIndices i))+acc
-	let result0 = foldl' doAcc 0.0 [0..99]
-	let result1 = foldl' doAcc 0.0 [0..99]
-	let result2 = foldl' doAcc 0.0 [0..99]
-	let result3 = foldl' doAcc 0.0 [0..99]
-	let result4 = foldl' doAcc 0.0 [0..99]
-	let result5 = foldl' doAcc 0.0 [0..99]
-	let result6 = foldl' doAcc 0.0 [0..99]
-	let result7 = foldl' doAcc 0.0 [0..99]
-	let result8 = foldl' doAcc 0.0 [0..99]
-	let result9 = foldl' doAcc 0.0 [0..99]
-	print $ sum' [result0, result1, result2, result3, result4, result5, result6, result7, result8, result9]
-	
-doForest :: IO ()
-doForest = do
-	forest <- makeForest
-	scoreForest forest
-
-doTree :: IO ()
-doTree = do
-	tree <- makeTree
-	scoreTree tree
-
-makeForest :: IO ([DecisionTree Double])
-makeForest = do
-	rawTable <- readFile "miniTrain.csv"
-	let table = readTable rawTable
-	let seed = mkStdGen 1337
-	let names = tail (getColumnNames table)
-	let namesArray = B.fromList names
-	let config = RandomTreeConfig 5 10 10 (T.pack "Activity") namesArray
-	let allIndices = getIndices table
-	let (seed1, trees) = growRandomForest config 50 table allIndices seed
-	return trees
-
-scoreForest :: [DecisionTree Double] -> IO ()
-scoreForest trees = do
-	rawTable <- readFile "miniTest.csv"
-	let table = readTable rawTable
-	let predictions = map (\ix -> sum' (map (\t -> runTree table t ix) trees)/(fromIntegral (length trees))) (getIndices table)
-	let response = V.toList (getDoubleColumn table (T.pack "Activity"))
-	let treeScore = sum' (zipWith logLoss response predictions) / (fromIntegral (length response))
-	print treeScore
-
-scoreTree :: DecisionTree Double -> IO ()
-scoreTree tree = do
-	rawTable <- readFile "miniTest.csv"
-	let table = readTable rawTable
-	let predictions = map (runTree table tree) (getIndices table)
-	let response = V.toList (getDoubleColumn table (T.pack "Activity"))
-	let treeScore = sum' (zipWith logLoss response predictions) / (fromIntegral (length response))
-	print treeScore
-
-makeTree :: IO (DecisionTree Double)
-makeTree = do
-	rawTable <- readFile "miniTrain.csv"
-	let table = readTable rawTable
-	let seed = mkStdGen 1337
-	let names = tail (getColumnNames table)
-	let namesArray = B.fromList names
-	let config = RandomTreeConfig 5 9 9 (T.pack "Activity") namesArray
-	let allIndices = getIndices table
-	let (seed1, tree) = growRandomTree config table allIndices seed
-	return tree
-
-data DecisionTree a =
-	DtSplit AnyMatcher (DecisionTree a) (DecisionTree a)
-	| DtLeaf a
-	deriving (Show)
-
-runTree :: Dataframe -> DecisionTree a -> Int -> a
-runTree _ (DtLeaf result) _ = result
-runTree frame (DtSplit matcher trueBranch falseBranch) index =
-	if matchOne matcher frame index
-		then runTree frame trueBranch index
-		else runTree frame falseBranch index
-
--- minsize, minstep, response, variables
-data TreeConfig = TreeConfig Int Int Name [Name]
-	deriving (Eq, Show)
+predictForest :: Forest Double -> Dataframe -> [Double]
+predictForest trees table = 
+	let predictions = map (\ix -> sum' (map (\t -> runTree table t ix) trees)/(fromIntegral (length trees))) (getIndices table) in
+	predictions
 
 -- mway minsize minstep response variables
 data RandomTreeConfig = RandomTreeConfig Int Int Int Name (B.Vector Name)
 	deriving (Eq, Show)
-
-growTree :: TreeConfig -> Dataframe -> [Int] -> DecisionTree Double
-growTree tc@(TreeConfig _ _ r _) f ixs =
-	let bm = bestMatcher tc f ixs in
-	let toNode = makeNode tc f ixs in
-	let leaf = DtLeaf (aggregateMany (MeanAgg r) f ixs) in
-	maybe leaf toNode bm
-
-makeNode :: TreeConfig -> Dataframe -> [Int] -> AnyMatcher
-	-> DecisionTree Double
-makeNode tc frame indices m =
-	let (trues, falses) = partition (matchOne m frame) indices in
-	let tLeft = growTree tc frame trues in
-	let tRight = growTree tc frame falses in
-	DtSplit m tLeft tRight
 
 growRandomForest :: RandomGen g => RandomTreeConfig -> Int -> Dataframe
 	-> [Int] -> g -> (g, [DecisionTree Double])
@@ -192,8 +89,6 @@ makeMatcher minSize minStep f response ixs (n, c) = case columnType c of
 		let bestSplit = bestDoubleSplit minSize continuous response ixs in
 		maybe []
 			(\(split, _) -> [AnyMatcher (DoubleSplit (n,split))]) bestSplit
-
---	DblType -> map AnyMatcher (doubleSplits f minSize minStep n ixs)
 	_ -> []
 
 bestDoubleSplit :: Int -> V.Vector Double -> V.Vector Double -> [Int]
@@ -304,3 +199,4 @@ deviationPlus' m acc x =
 squaredDeviationSimple :: [Double] -> [Double] -> Double
 squaredDeviationSimple actual prediction =
 	sum' $ zipWith (\x y-> let !d = x - y in d * d) actual prediction
+

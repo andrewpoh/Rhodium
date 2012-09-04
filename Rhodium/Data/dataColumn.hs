@@ -68,10 +68,3 @@ cellsToColumn cells
 	| all (\x -> isDoubleCell x || isIntCell x) cells =
 		Just $ DoubleC (V.fromList (map cellAsDouble cells))
 	| otherwise = Nothing
-
-makeColumn :: Either [Int] (Either [String] [Double]) -> DataColumn
-makeColumn (Left ints) = IntC (V.fromList ints)
-makeColumn (Right (Left strings)) =
-	StringC (B.fromList (map T.pack strings))
-makeColumn (Right (Right doubles)) =
-	DoubleC (V.fromList doubles)
