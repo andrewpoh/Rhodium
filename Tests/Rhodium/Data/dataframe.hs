@@ -32,3 +32,4 @@ bigFrame = makeFrame [
 	]
 
 testCol1 = ("a", makeColumn (Left [1,2,3]))
+testCol2 = ("b", makeColumn (Right ["a","b","a"]))
